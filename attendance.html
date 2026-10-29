@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>CR 出勤表</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -41,11 +42,10 @@ body {
 }
 button { font-family: inherit; }
 .wrap { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+body:not(.authed) .wrap { visibility: hidden; }
 
 /* ── 頁首 ── */
-.top {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
-}
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .back { color: var(--muted); text-decoration: none; font-size: 12px; }
 .back:hover { color: var(--fg); text-decoration: underline; }
 h1 { font-size: 20px; font-weight: 900; letter-spacing: .02em; }
@@ -58,12 +58,6 @@ h1 { font-size: 20px; font-weight: 900; letter-spacing: .02em; }
 .btn.primary { background: var(--accent3); font-weight: 700; }
 .btn:disabled { opacity: .5; cursor: default; }
 .who { font-size: 12px; color: var(--muted); }
-.badge {
-  display: inline-block; border-radius: 20px; padding: 2px 9px; font-size: 11px;
-  border: 1px solid var(--line); margin-left: 6px;
-}
-.badge.edit { background: var(--accent3); }
-.badge.ro   { background: var(--white); color: var(--muted); border-color: #bbb; }
 
 /* ── 月份列 ── */
 .bar {
@@ -81,6 +75,11 @@ h1 { font-size: 20px; font-weight: 900; letter-spacing: .02em; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11px; color: #444; }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,.25); display: inline-block; }
+.legend .half {
+  display: inline-block;
+  width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,.25);
+  background: linear-gradient(var(--st-leave) 50%, var(--st-home) 50%);
+}
 .status-msg { font-size: 12px; color: var(--muted); }
 
 /* ── 表格 ── */
@@ -92,7 +91,7 @@ table { border-collapse: separate; border-spacing: 0; font-size: 11px; }
 th, td { border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); }
 thead th {
   position: sticky; top: 0; z-index: 2; background: #fafafa;
-  font-weight: 700; padding: 4px 0; min-width: 46px; text-align: center; line-height: 1.25;
+  font-weight: 700; padding: 4px 0; min-width: 50px; text-align: center; line-height: 1.25;
 }
 thead th small { display: block; font-weight: 400; color: var(--muted); font-size: 10px; }
 thead th.off { background: #ececec; color: #888; }
@@ -104,52 +103,75 @@ th.name, td.name {
 }
 thead th.name { z-index: 3; background: #fafafa; }
 td.name b { font-weight: 700; font-size: 12px; }
+td.name.me b::after { content: '（我）'; font-weight: 400; color: var(--muted); font-size: 10px; }
 tr.team td {
   background: var(--cream); font-weight: 700; font-size: 11px; color: #444;
   padding: 3px 10px; border-bottom: 1px solid var(--line);
 }
 tr.team td.name { background: var(--cream); }
-td.cell { padding: 0; height: 30px; min-width: 46px; }
+td.cell { padding: 0; height: 36px; min-width: 50px; }
 td.cell.off { background: #f1f1f1; }
 td.cell.today { box-shadow: inset 2px 0 0 #b9c94a, inset -2px 0 0 #b9c94a; }
 .cell button {
-  width: 100%; height: 30px; border: 0; background: transparent; cursor: default;
-  font-size: 11px; line-height: 1.1; padding: 0 2px; color: var(--fg);
-  display: flex; align-items: center; justify-content: center; text-align: center;
-  word-break: break-all;
+  width: 100%; height: 36px; border: 0; background: transparent; cursor: pointer;
+  font-size: 11px; line-height: 1.1; padding: 0; color: var(--fg);
+  display: flex; flex-direction: column; align-items: stretch; justify-content: stretch;
 }
-.can-edit .cell button { cursor: pointer; }
-.can-edit .cell button:hover { outline: 2px solid var(--line); outline-offset: -2px; }
+body.can-edit .cell button:hover { outline: 2px solid var(--line); outline-offset: -2px; }
+body:not(.can-edit) .cell button { cursor: default; }
 .cell button:focus-visible { outline: 2px dashed var(--line); outline-offset: -3px; }
 .cell button.saving { opacity: .45; }
-.s-leave { background: var(--st-leave) !important; }
-.s-home  { background: var(--st-home)  !important; }
-.s-sick  { background: var(--st-sick)  !important; }
-.s-event { background: var(--st-event) !important; }
-.s-other { background: var(--st-other) !important; }
+.cell .full, .cell .h {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  text-align: center; word-break: break-all; padding: 0 2px; min-height: 0;
+}
+.cell .h { font-size: 10px; }
+.cell .h + .h { border-top: 1px dashed rgba(0,0,0,.18); }
+.s-leave { background: var(--st-leave); }
+.s-home  { background: var(--st-home); }
+.s-sick  { background: var(--st-sick); }
+.s-event { background: var(--st-event); }
+.s-other { background: var(--st-other); }
 
 /* ── 對話框 ── */
 dialog {
   border: 1px solid var(--line); border-radius: 12px; padding: 20px 20px 16px;
-  width: min(380px, calc(100vw - 32px)); margin: auto;
+  width: min(440px, calc(100vw - 24px)); margin: auto; max-height: calc(100vh - 24px);
   box-shadow: 0 10px 34px rgba(0,0,0,.2); font-family: var(--font);
 }
 dialog::backdrop { background: rgba(0,0,0,.4); }
 .dlg-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-.dlg-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.dlg-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.seg {
+  display: inline-flex; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; margin-bottom: 12px;
+}
+.seg button {
+  border: 0; background: var(--white); padding: 6px 16px; font-size: 13px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--dark); color: #fff; font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .chip {
   border: 1px solid var(--line); border-radius: 20px; padding: 5px 12px;
   font-size: 12px; cursor: pointer; background: var(--white);
 }
 .chip:hover { filter: brightness(.94); }
+.chip.normal { background: var(--white); border-style: dashed; }
 .chip.on { outline: 2px solid var(--fg); outline-offset: 1px; font-weight: 700; }
 .row { display: flex; gap: 6px; margin-bottom: 12px; }
 .row input {
-  flex: 1; border: 1px solid var(--line); border-radius: var(--r-sm);
+  flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: var(--r-sm);
   padding: 6px 9px; font-family: inherit; font-size: 13px;
 }
-.dlg-actions { display: flex; justify-content: space-between; gap: 8px; }
+.preview {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center;
+  background: #fafafa; border: 1px solid var(--grid); border-radius: var(--r-sm);
+  padding: 8px 10px; margin-bottom: 12px; font-size: 12px;
+}
+.preview b { font-weight: 700; color: #444; }
+.pv { border-radius: 4px; padding: 2px 8px; justify-self: start; }
+.meta { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 12px; color: #444; }
 .field input {
   border: 1px solid var(--line); border-radius: var(--r-sm); padding: 7px 9px;
@@ -157,24 +179,50 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 }
 .err { color: #b3261e; font-size: 12px; min-height: 16px; margin-bottom: 8px; }
 
+/* ── 登入 ── */
+.login-gate {
+  position: fixed; inset: 0; z-index: 100; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.login-gate[hidden] { display: none; }
+.login-box {
+  background: var(--white); border: 1px solid var(--line); border-radius: 12px;
+  width: min(360px, 100%); padding: 26px 24px 22px;
+}
+.login-box h2 { font-size: 18px; font-weight: 900; margin-bottom: 4px; }
+.login-box p { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.login-box .btn.primary { width: 100%; padding: 8px; font-size: 13px; }
+
 /* ── 提示 ── */
 .toast {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
   background: var(--dark); color: #fff; border-radius: 20px; padding: 8px 16px;
-  font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s;
+  font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200;
 }
 .toast.show { opacity: 1; }
 </style>
 </head>
 <body>
+
+<div class="login-gate" id="loginGate" hidden>
+  <form class="login-box" id="loginForm">
+    <h2>CR 出勤表</h2>
+    <p>請用 CR 大表（Creative）的帳號密碼登入</p>
+    <label class="field">Email<input type="email" id="loginEmail" autocomplete="username" required></label>
+    <label class="field">密碼<input type="password" id="loginPw" autocomplete="current-password" required></label>
+    <div class="err" id="loginErr"></div>
+    <button type="submit" class="btn primary" id="loginSubmit">登入</button>
+  </form>
+</div>
+
 <div class="wrap">
 
   <div class="top">
-    <a class="back" href="./">← 回 CR Portal</a>
+    <a class="back" href="https://sharonsbandaid-del.github.io/cr-portal/">← 回 CR Portal</a>
     <h1>CR 出勤表</h1>
     <div class="spacer"></div>
-    <span class="who" id="who">未登入（唯讀）</span>
-    <button class="btn" id="authBtn">登入編輯</button>
+    <span class="who" id="who"></span>
+    <button class="btn" id="logoutBtn">登出</button>
   </div>
 
   <div class="bar">
@@ -190,6 +238,7 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
       <span><i style="background:var(--st-sick)"></i>病假／事假／健檢</span>
       <span><i style="background:var(--st-event)"></i>員旅／公假／婚假</span>
       <span><i style="background:#f1f1f1"></i>假日</span>
+      <span><b class="half"></b>上下半天不同（上格＝上午）</span>
     </div>
     <div class="spacer"></div>
     <span class="status-msg" id="loadMsg"></span>
@@ -201,31 +250,26 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 <!-- 修改出勤 -->
 <dialog id="editDlg">
   <div class="dlg-title" id="editTitle"></div>
-  <div class="dlg-sub" id="editSub">選擇狀態，或輸入自訂內容</div>
+  <div class="dlg-sub">先選「整天／上午／下午」，再點狀態</div>
+  <div class="seg" id="seg">
+    <button type="button" data-t="all" class="on">整天</button>
+    <button type="button" data-t="am">上午</button>
+    <button type="button" data-t="pm">下午</button>
+  </div>
   <div class="chips" id="chips"></div>
   <div class="row">
-    <input id="customInput" placeholder="自訂，例如：上特休/下在宅" maxlength="30">
-    <button class="btn primary" id="customSave">儲存</button>
+    <input id="customInput" placeholder="其他狀態，自己輸入" maxlength="20">
+    <button class="btn" id="customApply">套用</button>
   </div>
+  <div class="preview">
+    <b>上午</b><span class="pv" id="pvAm"></span>
+    <b>下午</b><span class="pv" id="pvPm"></span>
+  </div>
+  <div class="meta" id="editMeta"></div>
   <div class="dlg-actions">
-    <button class="btn" id="clearBtn">清除（正常出勤）</button>
     <button class="btn" id="cancelBtn">取消</button>
+    <button class="btn primary" id="saveBtn">儲存</button>
   </div>
-</dialog>
-
-<!-- 登入 -->
-<dialog id="loginDlg">
-  <form id="loginForm" method="dialog">
-    <div class="dlg-title">登入編輯出勤</div>
-    <div class="dlg-sub">使用 CR 大表（Creative）的帳號密碼</div>
-    <label class="field">Email<input type="email" id="loginEmail" autocomplete="username" required></label>
-    <label class="field">密碼<input type="password" id="loginPw" autocomplete="current-password" required></label>
-    <div class="err" id="loginErr"></div>
-    <div class="dlg-actions">
-      <button type="button" class="btn" id="loginCancel">取消</button>
-      <button type="submit" class="btn primary" id="loginSubmit">登入</button>
-    </div>
-  </form>
 </dialog>
 
 <div class="toast" id="toast"></div>
@@ -235,20 +279,10 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 const SUPABASE_URL = 'https://xlmjrmdrwoiljzfofoze.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_XAKmhxWEdlfxNAnX0eL79w_KquN6YP9';
 
-// 成員與隊伍（順序 = 表格順序；名字要和資料庫裡的 member 一致，用大寫）
-const TEAMS = [
-  { team: '',     members: ['CHOCO', 'HOWARD'] },
-  { team: '花花隊', members: ['IKA', 'HUNGLING', 'ANDY', 'SHERRY', 'WEN', 'KUAN'] },
-  { team: '泡泡隊', members: ['WEIYU', 'SANA', 'EMERY', 'NEKO', 'JIKA', 'YAYA', 'RISHONA'] },
-  { team: '啾啾隊', members: ['EMMA', 'MAE', 'DALORA', 'ICHIGO'] },
-  { team: '毛毛隊', members: ['BERNIE', 'IVAN', 'JOY', 'TZ', 'ZOE'] },
-];
+// 彈窗裡的狀態按鈕
+const STATUSES = ['特休', '大特', '在宅', '病假', '事假', '公假', '健檢', '員旅', '婚假', '生理假', '喪假', '颱風在宅'];
 
-// 常用狀態（彈窗裡的按鈕）
-const STATUSES = ['在宅', '特休', '特休(上)', '特休(下)', '大特', '病假', '病假(上)', '病假(下)',
-                  '事假', '事假(上)', '公假', '健檢', '員旅', '婚假', '生理假', '颱風在宅'];
-
-// 國定假日（每年更新）
+// 國定假日（每年底補下一年）
 const HOLIDAYS = {
   '2026-01-01': '元旦',
   '2026-02-14': '春節', '2026-02-15': '春節', '2026-02-16': '春節', '2026-02-17': '春節',
@@ -286,43 +320,40 @@ function toast(msg) {
 
 // ───────── 狀態 ─────────
 const now = new Date();
-let viewY = now.getFullYear(), viewM = now.getMonth();   // viewM: 0-11
-let data = {};          // key: 'YYYY-MM-DD|MEMBER' → status
+let viewY = now.getFullYear(), viewM = now.getMonth();
+let members = [];       // [{name, team}]
+let myName = '';
+let data = {};          // 'YYYY-MM-DD|NAME' → {am, pm, updated_by, updated_at}
+let editing = null;     // {date, member, am, pm, target}
 let canEdit = false;
-let editing = null;     // { date, member }
 
 // ───────── 登入 ─────────
-async function refreshAuth() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    canEdit = false;
-    $('who').textContent = '未登入（唯讀）';
-    $('authBtn').textContent = '登入編輯';
-  } else {
-    const email = session.user.email || '';
-    const { data: ok, error } = await sb.rpc('is_cr_attendance_editor');
-    canEdit = !error && ok === true;
-    $('who').innerHTML = esc(email) + (canEdit
-      ? '<span class="badge edit">可編輯</span>'
-      : '<span class="badge ro">唯讀</span>');
-    $('authBtn').textContent = '登出';
-  }
-  document.body.classList.toggle('can-edit', canEdit);
+function showLogin(msg) {
+  document.body.classList.remove('authed');
+  $('loginErr').textContent = msg || '';
+  $('loginGate').hidden = false;
+  setTimeout(() => $('loginEmail').focus(), 0);
 }
 
-$('authBtn').addEventListener('click', async () => {
+async function start() {
   const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    await sb.auth.signOut();
-    await refreshAuth();
-    toast('已登出');
-  } else {
-    $('loginErr').textContent = '';
-    $('loginDlg').showModal();
-    $('loginEmail').focus();
-  }
-});
-$('loginCancel').addEventListener('click', () => $('loginDlg').close());
+  if (!session) { showLogin(); return; }
+  const email = (session.user.email || '').toLowerCase();
+
+  const { data: rows, error } = await sb.from('cr_members')
+    .select('name,team,email,sort_order').eq('active', true).order('sort_order');
+  const me = (rows || []).find(m => (m.email || '').toLowerCase() === email);
+  if (error) { showLogin('資料載入失敗，請重新登入'); return; }
+  members = rows || [];
+  canEdit = !!me;                       // 只有 CR 成員能編輯，其他人唯讀
+  myName = me ? me.name : '';
+  $('who').textContent = (me ? me.name + '・' : '') + email + (canEdit ? '' : '（唯讀）');
+  $('loginGate').hidden = true;
+  document.body.classList.add('authed');
+  document.body.classList.toggle('can-edit', canEdit);
+  await loadMonth();
+}
+
 $('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   $('loginSubmit').disabled = true;
@@ -334,10 +365,9 @@ $('loginForm').addEventListener('submit', async e => {
   $('loginSubmit').disabled = false;
   if (error) { $('loginErr').textContent = '登入失敗：帳號或密碼錯誤'; return; }
   $('loginPw').value = '';
-  $('loginDlg').close();
-  await refreshAuth();
-  toast(canEdit ? '登入成功，可以編輯了' : '已登入，但這個帳號沒有編輯權限');
+  start();
 });
+$('logoutBtn').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
 // ───────── 讀資料 ─────────
 async function loadMonth() {
@@ -346,21 +376,31 @@ async function loadMonth() {
   $('monthLabel').textContent = viewY + ' 年 ' + (viewM + 1) + ' 月';
   $('loadMsg').textContent = '載入中…';
   data = {};
-  const { data: rows, error } = await sb
-    .from('cr_attendance')
-    .select('work_date,member,status')
-    .gte('work_date', ymd(first))
-    .lte('work_date', ymd(last));
+  const { data: rows, error } = await sb.from('cr_attendance')
+    .select('work_date,member,am,pm,updated_by,updated_at')
+    .gte('work_date', ymd(first)).lte('work_date', ymd(last));
   if (error) {
-    $('loadMsg').textContent = '資料載入失敗';
+    $('loadMsg').textContent = '資料載入失敗，請重新整理';
   } else {
-    rows.forEach(r => { data[r.work_date + '|' + r.member] = r.status; });
+    rows.forEach(r => { data[r.work_date + '|' + r.member] = r; });
     $('loadMsg').textContent = '';
   }
   render();
 }
 
 // ───────── 畫表格 ─────────
+function cellInner(rec) {
+  if (!rec || (!rec.am && !rec.pm)) return '';
+  if (rec.am === rec.pm) return '<span class="full ' + statusClass(rec.am) + '">' + esc(rec.am) + '</span>';
+  return '<span class="h ' + statusClass(rec.am) + '">' + esc(rec.am || '') + '</span>'
+       + '<span class="h ' + statusClass(rec.pm) + '">' + esc(rec.pm || '') + '</span>';
+}
+function cellLabel(m, key, rec) {
+  if (!rec || (!rec.am && !rec.pm)) return m + ' ' + key + ' 正常出勤';
+  if (rec.am === rec.pm) return m + ' ' + key + ' 整天' + rec.am;
+  return m + ' ' + key + ' 上午' + (rec.am || '正常') + '，下午' + (rec.pm || '正常');
+}
+
 function render() {
   const days = new Date(viewY, viewM + 1, 0).getDate();
   const today = ymd(new Date());
@@ -380,94 +420,124 @@ function render() {
   });
   h += '</tr></thead><tbody>';
 
-  TEAMS.forEach(g => {
-    if (g.team) h += '<tr class="team"><td class="name">' + esc(g.team) + '</td><td colspan="' + cols.length + '"></td></tr>';
-    g.members.forEach(m => {
-      h += '<tr><td class="name"><b>' + esc(m) + '</b></td>';
-      cols.forEach(c => {
-        const s = data[c.key + '|' + m] || '';
-        const cls = ['cell', c.off ? 'off' : '', c.today ? 'today' : ''].join(' ');
-        h += '<td class="' + cls + '"><button class="' + statusClass(s) + '" data-d="' + c.key + '" data-m="' + esc(m) + '"'
-          + ' aria-label="' + esc(m + ' ' + c.key + ' ' + (s || '正常出勤')) + '">' + esc(s) + '</button></td>';
-      });
-      h += '</tr>';
+  let lastTeam;
+  members.forEach(m => {
+    if (m.team && m.team !== lastTeam) {
+      h += '<tr class="team"><td class="name">' + esc(m.team) + '</td><td colspan="' + cols.length + '"></td></tr>';
+    }
+    lastTeam = m.team;
+    h += '<tr><td class="name' + (m.name === myName ? ' me' : '') + '"><b>' + esc(m.name) + '</b></td>';
+    cols.forEach(c => {
+      const rec = data[c.key + '|' + m.name];
+      const cls = ['cell', c.off ? 'off' : '', c.today ? 'today' : ''].join(' ');
+      h += '<td class="' + cls + '"><button data-d="' + c.key + '" data-m="' + esc(m.name) + '"'
+        + ' aria-label="' + esc(cellLabel(m.name, c.key, rec)) + '">' + cellInner(rec) + '</button></td>';
     });
+    h += '</tr>';
   });
   h += '</tbody></table>';
-  $('gridWrap').innerHTML = h;
+  const wrap = $('gridWrap');
+  const keepX = wrap.scrollLeft, keepY = wrap.scrollTop;
+  wrap.innerHTML = h;
+  wrap.scrollLeft = keepX;
+  wrap.scrollTop = keepY;
+}
 
-  // 捲到今天
+function scrollToToday() {
   const t = $('gridWrap').querySelector('th.today');
   if (t) $('gridWrap').scrollLeft = Math.max(0, t.offsetLeft - 200);
 }
 
 // ───────── 編輯 ─────────
+function setTarget(t) {
+  editing.target = t;
+  $('seg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  drawChips();
+}
+function currentForTarget() {
+  if (editing.target === 'am') return editing.am;
+  if (editing.target === 'pm') return editing.pm;
+  return editing.am === editing.pm ? editing.am : undefined;
+}
+function drawChips() {
+  const cur = currentForTarget();
+  $('chips').innerHTML =
+    '<button type="button" class="chip normal' + (cur === null ? ' on' : '') + '" data-s="">正常出勤</button>' +
+    STATUSES.map(s => '<button type="button" class="chip ' + statusClass(s) + (s === cur ? ' on' : '') + '" data-s="' + esc(s) + '">' + esc(s) + '</button>').join('');
+  const pv = (el, v) => { el.textContent = v || '正常出勤'; el.className = 'pv ' + statusClass(v); };
+  pv($('pvAm'), editing.am);
+  pv($('pvPm'), editing.pm);
+}
+function applyStatus(s) {
+  const v = s || null;
+  if (editing.target === 'all' || editing.target === 'am') editing.am = v;
+  if (editing.target === 'all' || editing.target === 'pm') editing.pm = v;
+  drawChips();
+}
+
 $('gridWrap').addEventListener('click', e => {
   const b = e.target.closest('.cell button');
   if (!b) return;
-  if (!canEdit) { toast('請先登入有編輯權限的帳號'); return; }
-  editing = { date: b.dataset.d, member: b.dataset.m };
-  const cur = data[editing.date + '|' + editing.member] || '';
+  if (!canEdit) { toast('只有 CR 成員可以修改出勤'); return; }
+  const rec = data[b.dataset.d + '|' + b.dataset.m];
+  editing = { date: b.dataset.d, member: b.dataset.m, am: rec?.am || null, pm: rec?.pm || null, orig: rec };
   const dt = new Date(editing.date + 'T00:00:00');
   $('editTitle').textContent = editing.member + ' · ' + (dt.getMonth() + 1) + '/' + dt.getDate() + '（' + WEEK[dt.getDay()] + '）';
-  $('editSub').textContent = cur ? '目前：' + cur : '目前：正常出勤';
-  $('chips').innerHTML = STATUSES.map(s =>
-    '<button type="button" class="chip ' + statusClass(s) + (s === cur ? ' on' : '') + '" data-s="' + esc(s) + '">' + esc(s) + '</button>'
-  ).join('');
-  $('customInput').value = STATUSES.includes(cur) ? '' : cur;
+  $('editMeta').textContent = rec?.updated_by
+    ? '最後修改：' + rec.updated_by + '，' + new Date(rec.updated_at).toLocaleString('zh-TW', { hour12: false })
+    : '';
+  $('customInput').value = '';
+  setTarget(rec && rec.am !== rec.pm ? 'am' : 'all');
   $('editDlg').showModal();
 });
 
-$('chips').addEventListener('click', e => {
-  const c = e.target.closest('.chip');
-  if (c) save(c.dataset.s);
-});
-$('customSave').addEventListener('click', () => {
+$('seg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTarget(b.dataset.t); });
+$('chips').addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) applyStatus(c.dataset.s); });
+$('customApply').addEventListener('click', () => {
   const v = $('customInput').value.trim();
-  if (!v) { toast('請輸入內容，或按「清除」'); return; }
-  save(v);
+  if (!v) { toast('請先輸入狀態'); return; }
+  applyStatus(v);
+  $('customInput').value = '';
 });
-$('customInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('customSave').click(); });
-$('clearBtn').addEventListener('click', () => save(''));
+$('customInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('customApply').click(); } });
 $('cancelBtn').addEventListener('click', () => $('editDlg').close());
+$('saveBtn').addEventListener('click', save);
 
-async function save(status) {
-  if (!editing) return;
-  const { date, member } = editing;
-  const key = date + '|' + member;
-  const prev = data[key] || '';
+async function save() {
+  const { date, member, am, pm, orig } = editing;
   $('editDlg').close();
-  if (status === prev) return;
+  if ((orig?.am || null) === am && (orig?.pm || null) === pm) return;
 
-  // 先更新畫面，失敗再還原
-  if (status) data[key] = status; else delete data[key];
+  const key = date + '|' + member;
+  if (am || pm) data[key] = { ...(orig || {}), work_date: date, member, am, pm };
+  else delete data[key];
   render();
   const btn = $('gridWrap').querySelector('button[data-d="' + date + '"][data-m="' + CSS.escape(member) + '"]');
   if (btn) btn.classList.add('saving');
 
-  const { error } = status
-    ? await sb.from('cr_attendance').upsert({ work_date: date, member, status, updated_at: new Date().toISOString() })
+  const res = (am || pm)
+    ? await sb.from('cr_attendance').upsert({ work_date: date, member, am, pm }).select('work_date,member,am,pm,updated_by,updated_at').single()
     : await sb.from('cr_attendance').delete().eq('work_date', date).eq('member', member);
 
-  if (error) {
-    if (prev) data[key] = prev; else delete data[key];
+  if (res.error) {
+    if (orig) data[key] = orig; else delete data[key];
     render();
-    toast('儲存失敗：' + (error.message || '請重新登入再試'));
-  } else {
-    if (btn) btn.classList.remove('saving');
-    toast(status ? member + ' 已設為「' + status + '」' : member + ' 已清除');
+    toast('儲存失敗：' + (res.error.message || '請重新登入再試'));
+    return;
   }
+  if (res.data) data[key] = res.data;
+  render();
+  const desc = !am && !pm ? '正常出勤' : am === pm ? am : '上午' + (am || '正常') + '／下午' + (pm || '正常');
+  toast(member + ' ' + (date.slice(5).replace('-', '/')) + ' → ' + desc);
 }
 
 // ───────── 月份切換 ─────────
 $('prevM').addEventListener('click', () => { viewM--; if (viewM < 0) { viewM = 11; viewY--; } loadMonth(); });
 $('nextM').addEventListener('click', () => { viewM++; if (viewM > 11) { viewM = 0; viewY++; } loadMonth(); });
-$('todayBtn').addEventListener('click', () => { viewY = now.getFullYear(); viewM = now.getMonth(); loadMonth(); });
+$('todayBtn').addEventListener('click', () => { viewY = now.getFullYear(); viewM = now.getMonth(); loadMonth().then(scrollToToday); });
 
 // ───────── 啟動 ─────────
-// 不能在這個 callback 裡直接 await Supabase 呼叫，所以延後執行
-sb.auth.onAuthStateChange(() => { setTimeout(refreshAuth, 0); });
-refreshAuth().then(loadMonth);
+start().then(scrollToToday);
 </script>
 </body>
 </html>
