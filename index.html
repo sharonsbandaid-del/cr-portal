@@ -1,5 +1,5 @@
 <meta charset="UTF-8">
-<title>CR Portal</title>
+<title>CR大平台</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -429,7 +429,7 @@ dialog.pdlg::backdrop { background: rgba(0,0,0,.4); }
 
 <div class="login-gate" id="loginGate" hidden>
   <form class="login-box" id="loginForm">
-    <h2>CR Portal</h2>
+    <h2>CR大平台</h2>
     <p>請用 CR 大表（Creative）的帳號密碼登入</p>
     <label class="field">Email<input type="email" id="loginEmail" autocomplete="username" required></label>
     <label class="field">密碼<input type="password" id="loginPw" autocomplete="current-password" required></label>
@@ -655,28 +655,45 @@ async function loadAttendance() {
 }
 
 // ───────── 待辦工作 ─────────
-// CR 成員：自己負責、狀態「已BRIEF」的案件
-// 非 CR（AE 等）：全 CR 狀態「待BRIEF」的案件
+// CR 成員：自己負責、狀態「已BRIEF」的案件（照預計入稿，近的在上）
+// 非 CR（AE 等）：全 CR 狀態「待BRIEF」的案件（照 Date，新的在上，和 CR 大表一樣）
 const CR_TODO_STATUS    = '已BRIEF';
 const GUEST_TODO_STATUS = '待BRIEF';   // 要和 CR 大表裡的狀態文字一模一樣
 
-const PROJECT_COLS = 'account,work_subcategory,project_name,management_id,expected_submission_date';
+const PROJECT_COLS = 'date,ae_owner,account,work_subcategory,project_name,management_id,brief_date,expected_submission_date,project_type,parent_id';
+
+// CR 大表不顯示「找不到母案件的子案件」（母案件是空的或已被刪除），這裡也排除，兩邊數量才會一致
+async function dropOrphans(rows) {
+  const parentIds = [...new Set(rows.filter(r => r.project_type === 'child' && r.parent_id).map(r => r.parent_id))];
+  let existing = new Set();
+  if (parentIds.length) {
+    const { data, error } = await sb.from('projects').select('id').in('id', parentIds);
+    if (error) throw error;
+    existing = new Set((data || []).map(p => p.id));
+  }
+  return rows.filter(r => r.project_type !== 'child' || (r.parent_id && existing.has(r.parent_id)));
+}
 
 async function fetchTodoRows(memberName) {
   if (!memberName) {
     const { data, error } = await sb.from('projects').select(PROJECT_COLS).eq('status', GUEST_TODO_STATUS);
     if (error) throw error;
-    return data || [];
+    return dropOrphans(data || []);
   }
   const fields = ['cr1', 'cr2', 'cr3', '文案'];
   const results = await Promise.all(fields.map(f =>
-    sb.from('projects').select(PROJECT_COLS).eq('status', CR_TODO_STATUS).eq(f, memberName).then(r => r.data || [])
+    sb.from('projects').select(PROJECT_COLS).eq('status', CR_TODO_STATUS).eq(f, memberName)
+      .then(r => r.data || [])
   ));
-  return results.flat();
+  return dropOrphans(results.flat());
 }
+
+const d10 = v => v ? String(v).slice(0, 10) : '–';
+const cell = (v, nowrap) => '<td' + (nowrap ? ' style="white-space:nowrap"' : '') + '>' + esc(v || '–') + '</td>';
 
 async function loadTodo(memberName) {
   const el = $('todoArea');
+  const isCR = !!memberName;
   try {
     const raw = await fetchTodoRows(memberName);
     // 用 management_id 去重
@@ -686,17 +703,23 @@ async function loadTodo(memberName) {
       const key = row.management_id || (row.project_name + row.account);
       if (!seen.has(key)) { seen.add(key); rows.push(row); }
     });
-    rows.sort((a, b) => (a.expected_submission_date || '9999') > (b.expected_submission_date || '9999') ? 1 : -1);
     if (rows.length === 0) {
-      el.innerHTML = '<p class="todo-msg">' + (memberName ? '目前沒有已BRIEF的工作 👌' : '目前沒有待BRIEF的案件') + '</p>';
+      el.innerHTML = '<p class="todo-msg">' + (isCR ? '目前沒有已BRIEF的工作 👌' : '目前沒有待BRIEF的案件') + '</p>';
       return;
     }
-    const trs = rows.map(r =>
-      '<tr><td>' + esc(r.account || '–') + '</td><td>' + esc(r.work_subcategory || '–') + '</td><td>' + esc(r.project_name || '–') +
-      '</td><td>' + esc(r.management_id || '–') + '</td><td style="white-space:nowrap">' +
-      esc(r.expected_submission_date ? r.expected_submission_date.slice(0, 10) : '–') + '</td></tr>'
-    ).join('');
-    el.innerHTML = '<table class="todo-table"><thead><tr><th>Account</th><th>類型</th><th>專案名稱</th><th>管理編號</th><th>預計入稿</th></tr></thead><tbody>' + trs + '</tbody></table>';
+    let head, trs;
+    if (isCR) {
+      rows.sort((a, b) => (a.expected_submission_date || '9999') > (b.expected_submission_date || '9999') ? 1 : -1);
+      head = '<th>Account</th><th>類型</th><th>專案名稱</th><th>管理編號</th><th>預計入稿</th>';
+      trs = rows.map(r => '<tr>' + cell(r.account) + cell(r.work_subcategory) + cell(r.project_name) +
+        cell(r.management_id) + cell(d10(r.expected_submission_date), true) + '</tr>').join('');
+    } else {
+      rows.sort((a, b) => (b.date || '') > (a.date || '') ? 1 : (b.date || '') < (a.date || '') ? -1 : 0);
+      head = '<th>Date</th><th>AE</th><th>Account</th><th>類型</th><th>專案名稱</th><th>管理編號</th><th>BRIEF日期</th>';
+      trs = rows.map(r => '<tr>' + cell(d10(r.date), true) + cell(r.ae_owner) + cell(r.account) + cell(r.work_subcategory) +
+        cell(r.project_name) + cell(r.management_id) + cell(d10(r.brief_date), true) + '</tr>').join('');
+    }
+    el.innerHTML = '<table class="todo-table"><thead><tr>' + head + '</tr></thead><tbody>' + trs + '</tbody></table>';
   } catch (e) {
     el.innerHTML = '<p class="todo-msg">載入失敗：' + esc(e.message || '') + '</p>';
   }
