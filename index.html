@@ -1,11 +1,14 @@
 <meta charset="UTF-8">
 <title>CR Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <meta name="claude:viewport-fit-sides" content="cover">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap">
 <style>
 @font-face {
   font-family: 'BoutiqueBitmap';
-  src: url('/sites/TEST_CRPatral/SiteAssets/BoutiqueBitmap9x9HK_Bold_1.93.ttf') format('truetype');
+  src: url('BoutiqueBitmap9x9HK_Bold_1.93.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -366,13 +369,94 @@ body {
 }
 .footer-band a { color: #e0e0e0; text-decoration: underline; font-size: 13px; font-weight: 300; }
 .footer-band a:hover { color: #9ef985; }
+
+/* ── 登入 ── */
+body:not(.authed) .portal { visibility: hidden; }
+body.guest .marquee-edit { display: none; }
+.login-gate {
+  position: fixed; inset: 0; z-index: 100; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.login-gate[hidden] { display: none; }
+.login-box {
+  background: var(--white); border: var(--border); border-radius: 12px;
+  width: min(360px, 100%); padding: 26px 24px 22px;
+}
+.login-box h2 { font-size: 18px; font-weight: 900; margin-bottom: 4px; }
+.login-box p { font-size: 12px; color: var(--fg-muted); margin-bottom: 16px; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 12px; color: #444; }
+.field input, .ann-input {
+  border: var(--border); border-radius: var(--r-sm); padding: 8px 10px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 400;
+}
+.login-err { color: #b3261e; font-size: 12px; min-height: 16px; margin-bottom: 8px; }
+.pbtn {
+  border: var(--border); border-radius: var(--r-sm); background: var(--white);
+  padding: 7px 14px; font-family: var(--font-body); font-size: 13px; cursor: pointer;
+}
+.pbtn.primary { background: var(--accent3); font-weight: 700; }
+.pbtn:disabled { opacity: .5; cursor: default; }
+.pbtn:hover { filter: brightness(.95); }
+.login-box .pbtn.primary { width: 100%; }
+
+.who-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.whoami { font-size: 11px; color: var(--fg-muted); }
+.ghost-btn {
+  padding: 3px 10px; border: 1px solid #aaa; border-radius: 12px; background: transparent;
+  font-size: 11px; cursor: pointer; color: #666; font-family: inherit;
+}
+.ghost-btn:hover { border-color: #555; color: #222; }
+
+/* ── 公告編輯 ── */
+.marquee-zone { position: relative; }
+.marquee-edit {
+  position: absolute; top: 6px; right: 8px; z-index: 2;
+  border: 1px solid rgba(158,249,133,.5); background: rgba(0,0,0,.55); color: #9ef985;
+  border-radius: 12px; font-size: 11px; padding: 2px 9px; cursor: pointer; font-family: inherit;
+  opacity: .55; transition: opacity .15s;
+}
+.marquee-card:hover .marquee-edit, .marquee-edit:focus-visible { opacity: 1; }
+dialog.pdlg {
+  border: var(--border); border-radius: 12px; padding: 20px; margin: auto;
+  width: min(420px, calc(100vw - 32px)); font-family: var(--font-body);
+}
+dialog.pdlg::backdrop { background: rgba(0,0,0,.4); }
+.pdlg h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.pdlg p { font-size: 12px; color: var(--fg-muted); margin-bottom: 12px; }
+.ann-input { width: 100%; margin-bottom: 6px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
 </style>
+
+<div class="login-gate" id="loginGate" hidden>
+  <form class="login-box" id="loginForm">
+    <h2>CR Portal</h2>
+    <p>請用 CR 大表（Creative）的帳號密碼登入</p>
+    <label class="field">Email<input type="email" id="loginEmail" autocomplete="username" required></label>
+    <label class="field">密碼<input type="password" id="loginPw" autocomplete="current-password" required></label>
+    <div class="login-err" id="loginErr"></div>
+    <button type="submit" class="pbtn primary" id="loginSubmit">登入</button>
+  </form>
+</div>
+
+<dialog class="pdlg" id="annDlg">
+  <form id="annForm">
+    <h3>編輯跑馬燈公告</h3>
+    <p>儲存後所有人重新整理就會看到</p>
+    <input class="ann-input" id="annInput" maxlength="80" placeholder="例如：🎉 本週五下午大掃除">
+    <div class="login-err" id="annErr"></div>
+    <div class="dlg-actions">
+      <button type="button" class="pbtn" id="annCancel">取消</button>
+      <button type="submit" class="pbtn primary" id="annSave">儲存</button>
+    </div>
+  </form>
+</dialog>
 
 <div class="portal">
 
-  <div style="display:flex;align-items:center;gap:10px;">
+  <div class="who-row">
     <div class="greeting" id="greetLine">早安 ☀️</div>
-    <button id="switchIdentityBtn" onclick="showIdentityPicker(applyIdentity)" style="display:none;padding:3px 10px;border:1px solid #aaa;border-radius:12px;background:transparent;font-size:11px;cursor:pointer;color:#666;font-family:inherit;">切換身份</button>
+    <span class="whoami" id="whoami"></span>
+    <button class="ghost-btn" id="logoutBtn">登出</button>
   </div>
 
   <!-- ── TOP ── -->
@@ -385,11 +469,12 @@ body {
 
     <div class="marquee-card">
       <div class="marquee-zone">
+        <button class="marquee-edit" id="marqueeEditBtn">✎ 編輯公告</button>
         <div class="marquee-track" id="marqueeTrack">
-          <span class="marquee-seg" id="marqueeSeg1">測試中</span>
-          <span class="marquee-seg" id="marqueeSeg2">測試中</span>
-          <span class="marquee-seg" id="marqueeSeg3">1234</span>
-          <span class="marquee-seg" id="marqueeSeg4">TEST</span>
+          <span class="marquee-seg" id="marqueeSeg1"> </span>
+          <span class="marquee-seg" id="marqueeSeg2"> </span>
+          <span class="marquee-seg" id="marqueeSeg3"> </span>
+          <span class="marquee-seg" id="marqueeSeg4"> </span>
         </div>
       </div>
       <div class="att-zone">
@@ -411,7 +496,7 @@ body {
   <div class="main-grid">
 
     <div class="sec todo-sec">
-      <div class="sec-label">待辦工作</div>
+      <div class="sec-label" id="todoLabel">待辦工作</div>
       <div id="todoArea" class="todo-wrap"><p class="todo-msg">識別登入者中…</p></div>
     </div>
 
@@ -487,199 +572,182 @@ body {
 </div>
 
 <script>
-const EMAIL_TO_NAME = {
-  'hungling@daiko.tw':     'HUNGLING',
-  'ichigo@daiko.tw':       'NEKO',
-  'neko@daiko.tw':         'NEKO',
-  'i-cho@daiko.tw':        'WEIYU',
-  'yihualin@daiko.tw':     'IKA',
-  'bernie@daiko.tw':       'BERNIE',
-  'kazuki@daiko.tw':       'MAE',
-  'howard.chang@daiko.tw': 'HOWARD',
-  'zoe.hsu@daiko.tw':      'ZOE',
-  'emery.lin@daiko.tw':    'EMERY',
-  'tz.yang@daiko.tw':      'TZ',
-  'yayahung@daiko.tw':     'YAYA',
-  'ivan0830@daiko.tw':     'IVAN',
-  'joy.tsai@daiko.tw':     'JOY',
-  'dalora.hsu@daiko.tw':   'DALORA',
-  'sana0709@daiko.tw':     'SANA',
-  'andy.chen@daiko.tw':    'ANDY',
-  'emmachen0701@daiko.tw': 'EMMA',
-  'sherry.chen@daiko.tw':  'SHERRY',
-  'chocokou@daiko.tw':     'CHOCO',
-  'kuan.kuan@daiko.tw':    'KUAN'
-};
-
+// ───────── 設定 ─────────
 const SUPABASE_URL = 'https://xlmjrmdrwoiljzfofoze.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_XAKmhxWEdlfxNAnX0eL79w_KquN6YP9';
-const SP_SITE      = 'https://daikoadmin.sharepoint.com/sites/TEST_CRPatral';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// greeting
-(function() {
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const todayStr = () => { const t = new Date(); return t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()); };
+
+function greetText(name) {
   const h = new Date().getHours();
   const g = h < 12 ? '早安' : h < 18 ? '午安' : '晚安';
   const icon = h < 12 ? '☀️' : h < 18 ? '🌤️' : '🌙';
-  document.getElementById('greetLine').textContent = g + ' ' + icon;
-})();
+  return g + (name ? '，' + name : '') + ' ' + icon;
+}
+$('greetLine').textContent = greetText('');
 
-// 備忘錄
-const memoEl = document.getElementById('memoArea');
-try { memoEl.value = localStorage.getItem('crportal_memo') || ''; } catch(e){}
+// ───────── 備忘錄（存在自己的瀏覽器）─────────
+const memoEl = $('memoArea');
+try { memoEl.value = localStorage.getItem('crportal_memo') || ''; } catch (e) {}
 memoEl.addEventListener('input', () => {
-  try { localStorage.setItem('crportal_memo', memoEl.value); } catch(e){}
+  try { localStorage.setItem('crportal_memo', memoEl.value); } catch (e) {}
 });
 
-// 跑馬燈 from SharePoint 清單
+// ───────── 跑馬燈公告 ─────────
+let currentAnnouncement = '';
+function setMarquee(txt) {
+  currentAnnouncement = txt || '';
+  ['marqueeSeg1', 'marqueeSeg2', 'marqueeSeg3', 'marqueeSeg4'].forEach(id => {
+    $(id).textContent = currentAnnouncement || ' ';
+  });
+}
 async function loadMarquee() {
-  try {
-    const r = await fetch(
-      SP_SITE + "/_api/web/lists/getbytitle('CR%E5%85%AC%E5%91%8A')/items?$orderby=Created%20desc&$top=1&$select=Title",
-      { headers: { 'Accept': 'application/json;odata=verbose' }, credentials: 'include' }
-    );
-    const d = await r.json();
-    const items = d?.d?.results || [];
-    if (items.length > 0 && items[0].Title) {
-      const txt = items[0].Title;
-      ['marqueeSeg1','marqueeSeg2','marqueeSeg3','marqueeSeg4'].forEach(id => {
-        document.getElementById(id).textContent = txt;
-      });
-    }
-  } catch(e) {}
+  const { data, error } = await sb.from('cr_announcements').select('text,updated_by,updated_at').eq('id', 1).maybeSingle();
+  if (!error && data) {
+    setMarquee(data.text);
+    $('marqueeEditBtn').title = data.updated_by ? '最後修改：' + data.updated_by : '';
+  }
 }
+$('marqueeEditBtn').addEventListener('click', () => {
+  $('annInput').value = currentAnnouncement;
+  $('annErr').textContent = '';
+  $('annDlg').showModal();
+  $('annInput').focus();
+});
+$('annCancel').addEventListener('click', () => $('annDlg').close());
+$('annForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const txt = $('annInput').value.trim();
+  if (!txt) { $('annErr').textContent = '請輸入公告內容'; return; }
+  $('annSave').disabled = true;
+  const { error } = await sb.from('cr_announcements').update({ text: txt }).eq('id', 1);
+  $('annSave').disabled = false;
+  if (error) { $('annErr').textContent = '儲存失敗：' + error.message; return; }
+  setMarquee(txt);
+  $('annDlg').close();
+});
 
-// 本日出勤（Supabase：cr_attendance）
+// ───────── 本日出勤 ─────────
+function describeAttendance(am, pm) {
+  if (am && pm && am === pm) return am;
+  const parts = [];
+  if (am) parts.push('上午' + am);
+  if (pm) parts.push('下午' + pm);
+  return parts.join('／');
+}
 async function loadAttendance() {
-  const t = new Date();
-  const today = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
-  const el = document.getElementById('attTags');
-  try {
-    const r = await fetch(
-      SUPABASE_URL + '/rest/v1/cr_attendance?work_date=eq.' + today + '&select=member,status&order=member',
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Accept': 'application/json' } }
-    );
-    if (!r.ok) throw new Error(r.status);
-    const items = await r.json();
-    const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    el.innerHTML = !Array.isArray(items) || items.length === 0
-      ? '<span class="att-empty">今日暫無出勤資料</span>'
-      : items.map(i => '<span class="att-chip">' + esc(i.member || '?') + (i.status ? ' ' + esc(i.status) : '') + '</span>').join('');
-  } catch { el.innerHTML = '<span class="att-empty">出勤資料無法載入</span>'; }
+  const el = $('attTags');
+  const [att, mem] = await Promise.all([
+    sb.from('cr_attendance').select('member,am,pm').eq('work_date', todayStr()),
+    sb.from('cr_members').select('name,sort_order'),
+  ]);
+  if (att.error) { el.innerHTML = '<span class="att-empty">出勤資料無法載入</span>'; return; }
+  const order = {};
+  (mem.data || []).forEach(m => { order[m.name] = m.sort_order; });
+  const items = (att.data || []).sort((a, b) => (order[a.member] ?? 9999) - (order[b.member] ?? 9999));
+  el.innerHTML = items.length === 0
+    ? '<span class="att-empty">今日全員正常出勤</span>'
+    : items.map(i => '<span class="att-chip">' + esc(i.member) + ' ' + esc(describeAttendance(i.am, i.pm)) + '</span>').join('');
 }
 
-async function getCurrentUserEmail() {
-  try {
-    const r = await fetch(SP_SITE + '/_api/web/currentUser',
-      { headers: { 'Accept': 'application/json;odata=verbose' }, credentials: 'include' });
-    const d = await r.json();
-    return (d?.d?.Email || '').toLowerCase();
-  } catch { return ''; }
+// ───────── 待辦工作 ─────────
+// CR 成員：自己負責、狀態「已BRIEF」的案件
+// 非 CR（AE 等）：全 CR 狀態「待BF」的案件
+const CR_TODO_STATUS    = '已BRIEF';
+const GUEST_TODO_STATUS = '待BF';   // 要和 CR 大表裡的狀態文字一模一樣
+
+const PROJECT_COLS = 'account,work_subcategory,project_name,management_id,expected_submission_date';
+
+async function fetchTodoRows(memberName) {
+  if (!memberName) {
+    const { data, error } = await sb.from('projects').select(PROJECT_COLS).eq('status', GUEST_TODO_STATUS);
+    if (error) throw error;
+    return data || [];
+  }
+  const fields = ['cr1', 'cr2', 'cr3', '文案'];
+  const results = await Promise.all(fields.map(f =>
+    sb.from('projects').select(PROJECT_COLS).eq('status', CR_TODO_STATUS).eq(f, memberName).then(r => r.data || [])
+  ));
+  return results.flat();
 }
 
 async function loadTodo(memberName) {
-  const el = document.getElementById('todoArea');
-  if (!memberName) { el.innerHTML = '<p class="todo-msg">無法識別登入者</p>'; return; }
-  const hdrs = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_KEY,
-    'Accept': 'application/json'
-  };
+  const el = $('todoArea');
   try {
-    const enc = encodeURIComponent(memberName);
-    const statusEnc = encodeURIComponent('已BRIEF');
-    const sel = 'select=account,work_subcategory,project_name,management_id,expected_submission_date';
-    // 查四個欄位，分四次 fetch 再去重合併
-    const fields = ['cr1', 'cr2', 'cr3', '文案']; // 文案
-    const fetches = fields.map(f =>
-      fetch(SUPABASE_URL + '/rest/v1/projects?status=eq.' + statusEnc + '&' + encodeURIComponent(f) + '=eq.' + enc + '&' + sel, { headers: hdrs })
-        .then(res => res.json()).then(d => Array.isArray(d) ? d : []).catch(() => [])
-    );
-    const results = await Promise.all(fetches);
+    const raw = await fetchTodoRows(memberName);
     // 用 management_id 去重
     const seen = new Set();
     const rows = [];
-    for (const arr of results) {
-      for (const row of arr) {
-        const key = row.management_id || (row.project_name + row.account);
-        if (!seen.has(key)) { seen.add(key); rows.push(row); }
-      }
-    }
-    rows.sort((a,b) => (a.expected_submission_date||'9999') > (b.expected_submission_date||'9999') ? 1 : -1);
+    raw.forEach(row => {
+      const key = row.management_id || (row.project_name + row.account);
+      if (!seen.has(key)) { seen.add(key); rows.push(row); }
+    });
+    rows.sort((a, b) => (a.expected_submission_date || '9999') > (b.expected_submission_date || '9999') ? 1 : -1);
     if (rows.length === 0) {
-      el.innerHTML = '<p class="todo-msg">目前沒有已BRIEF的工作 👌</p>'; return;
+      el.innerHTML = '<p class="todo-msg">' + (memberName ? '目前沒有已BRIEF的工作 👌' : '目前沒有待BF的案件') + '</p>';
+      return;
     }
-    const trs = rows.map(row => {
-      const acc    = row.account               || '–';
-      const subcat = row.work_subcategory      || '–';
-      const pname  = row.project_name          || '–';
-      const mgmtid = row.management_id         || '–';
-      const dead   = row.expected_submission_date ? row.expected_submission_date.slice(0,10) : '–';
-      return '<tr><td>' + acc + '</td><td>' + subcat + '</td><td>' + pname + '</td><td>' + mgmtid + '</td><td style="white-space:nowrap">' + dead + '</td></tr>';
-    }).join('');
+    const trs = rows.map(r =>
+      '<tr><td>' + esc(r.account || '–') + '</td><td>' + esc(r.work_subcategory || '–') + '</td><td>' + esc(r.project_name || '–') +
+      '</td><td>' + esc(r.management_id || '–') + '</td><td style="white-space:nowrap">' +
+      esc(r.expected_submission_date ? r.expected_submission_date.slice(0, 10) : '–') + '</td></tr>'
+    ).join('');
     el.innerHTML = '<table class="todo-table"><thead><tr><th>Account</th><th>類型</th><th>專案名稱</th><th>管理編號</th><th>預計入稿</th></tr></thead><tbody>' + trs + '</tbody></table>';
-  } catch(e) {
-    el.innerHTML = '<p class="todo-msg">載入失敗：' + e.message + '</p>';
+  } catch (e) {
+    el.innerHTML = '<p class="todo-msg">載入失敗：' + esc(e.message || '') + '</p>';
   }
 }
 
-// 所有成員名單
-const ALL_MEMBERS = Object.values(EMAIL_TO_NAME).filter((v,i,a)=>a.indexOf(v)===i).sort();
-
-function showIdentityPicker(onSelect) {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
-  const box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:12px;padding:28px 24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);';
-  box.innerHTML = `
-    <div style="font-size:15px;font-weight:700;margin-bottom:6px;">你是誰？</div>
-    <div style="font-size:12px;color:#666;margin-bottom:16px;">選擇後會記住，下次自動帶入</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;">
-      ${ALL_MEMBERS.map(n=>`<button onclick="window._pickIdentity('${n}')" style="padding:6px 14px;border:1.5px solid #ccc;border-radius:20px;background:#f5f5f5;cursor:pointer;font-size:13px;font-family:inherit;">${n}</button>`).join('')}
-    </div>
-  `;
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  window._pickIdentity = (name) => {
-    try { localStorage.setItem('crportal_identity', name); } catch(e){}
-    overlay.remove();
-    onSelect(name);
-  };
+// ───────── 登入 ─────────
+function showLogin(msg) {
+  document.body.classList.remove('authed');
+  $('loginErr').textContent = msg || '';
+  $('loginGate').hidden = false;
+  setTimeout(() => $('loginEmail').focus(), 0);
 }
 
-function applyIdentity(name) {
-  if (!name) return;
-  const h = new Date().getHours();
-  const g = h < 12 ? '早安' : h < 18 ? '午安' : '晚安';
-  const icon = h < 12 ? '☀️' : h < 18 ? '🌤️' : '🌙';
-  document.getElementById('greetLine').textContent = g + '，' + name + ' ' + icon;
-  const btn = document.getElementById('switchIdentityBtn');
-  if (btn) btn.style.display = 'inline-block';
-  loadTodo(name);
-}
+async function start() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showLogin(); return; }
 
-(async () => {
+  const email = (session.user.email || '').toLowerCase();
+  const { data: me } = await sb.from('cr_members').select('name').eq('email', email).eq('active', true).maybeSingle();
+  const isCR = !!me;
+  const displayName = isCR ? me.name : email.split('@')[0].toUpperCase();
+
+  $('loginGate').hidden = true;
+  document.body.classList.add('authed');
+  document.body.classList.toggle('guest', !isCR);
+  $('greetLine').textContent = greetText(displayName);
+  $('whoami').textContent = email;
+  $('todoLabel').textContent = isCR ? '待辦工作' : '待BF 案件（全 CR）';
+  loadTodo(isCR ? me.name : null);
   loadAttendance();
   loadMarquee();
+}
 
-  // 先嘗試從 SharePoint 取得登入者
-  const email = await getCurrentUserEmail();
-  const nameFromSP = EMAIL_TO_NAME[email] || '';
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('loginSubmit').disabled = true;
+  $('loginErr').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('loginEmail').value.trim(),
+    password: $('loginPw').value,
+  });
+  $('loginSubmit').disabled = false;
+  if (error) { $('loginErr').textContent = '登入失敗：帳號或密碼錯誤'; return; }
+  $('loginPw').value = '';
+  start();
+});
 
-  if (nameFromSP) {
-    // SharePoint 登入成功，直接用
-    try { localStorage.setItem('crportal_identity', nameFromSP); } catch(e){}
-    applyIdentity(nameFromSP);
-  } else {
-    // 從 localStorage 取上次選的身份
-    let savedName = '';
-    try { savedName = localStorage.getItem('crportal_identity') || ''; } catch(e){}
-    if (savedName) {
-      applyIdentity(savedName);
-    } else {
-      // 第一次：跳出選人介面
-      document.getElementById('todoArea').innerHTML = '<p class="todo-msg">請選擇你的身份</p>';
-      showIdentityPicker(applyIdentity);
-    }
-  }
-})();
+$('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  location.reload();
+});
+
+start();
 </script>
