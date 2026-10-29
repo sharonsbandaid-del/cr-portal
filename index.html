@@ -656,9 +656,9 @@ async function loadAttendance() {
 
 // ───────── 待辦工作 ─────────
 // CR 成員：自己負責、狀態「已BRIEF」的案件
-// 非 CR（AE 等）：全 CR 狀態「待BF」的案件
+// 非 CR（AE 等）：全 CR 狀態「待BRIEF」的案件
 const CR_TODO_STATUS    = '已BRIEF';
-const GUEST_TODO_STATUS = '待BF';   // 要和 CR 大表裡的狀態文字一模一樣
+const GUEST_TODO_STATUS = '待BRIEF';   // 要和 CR 大表裡的狀態文字一模一樣
 
 const PROJECT_COLS = 'account,work_subcategory,project_name,management_id,expected_submission_date';
 
@@ -688,7 +688,7 @@ async function loadTodo(memberName) {
     });
     rows.sort((a, b) => (a.expected_submission_date || '9999') > (b.expected_submission_date || '9999') ? 1 : -1);
     if (rows.length === 0) {
-      el.innerHTML = '<p class="todo-msg">' + (memberName ? '目前沒有已BRIEF的工作 👌' : '目前沒有待BF的案件') + '</p>';
+      el.innerHTML = '<p class="todo-msg">' + (memberName ? '目前沒有已BRIEF的工作 👌' : '目前沒有待BRIEF的案件') + '</p>';
       return;
     }
     const trs = rows.map(r =>
@@ -724,7 +724,7 @@ async function start() {
   document.body.classList.toggle('guest', !isCR);
   $('greetLine').textContent = greetText(displayName);
   $('whoami').textContent = email;
-  $('todoLabel').textContent = isCR ? '待辦工作' : '待BF 案件（全 CR）';
+  $('todoLabel').textContent = isCR ? '待辦工作' : '待BRIEF 案件（全 CR）';
   loadTodo(isCR ? me.name : null);
   loadAttendance();
   loadMarquee();
