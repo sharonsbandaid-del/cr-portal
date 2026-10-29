@@ -186,7 +186,7 @@ body {
 /* ── MAIN 4-col ── */
 .main-grid {
   display: grid;
-  grid-template-columns: 2fr 1.8fr 1.4fr 1.2fr;
+  grid-template-columns: 2.6fr 1.6fr 1.3fr 1.1fr;
   gap: 10px;
   align-items: stretch;
 }
@@ -216,7 +216,8 @@ body {
   border-collapse: collapse;
   font-size: 11px;
   font-weight: 300;
-  min-width: 300px;
+  min-width: 100%;
+  width: max-content;
 }
 .todo-table th {
   background: rgba(0,0,0,0.08);
@@ -234,9 +235,11 @@ body {
   padding: 5px 6px;
   border-bottom: 1px solid rgba(0,0,0,0.08);
   vertical-align: top;
-  word-break: break-word;
+  white-space: nowrap;
   min-width: 0;
 }
+/* 專案名稱太長才換行，其他欄位都不換行；放不下時表格可以左右捲動 */
+.todo-table td.pname { white-space: normal; min-width: 9em; max-width: 18em; }
 .todo-table tr:last-child td { border-bottom: none; }
 .todo-msg { color: #555; font-size: 12px; font-weight: 300; padding: 4px 0; }
 
@@ -688,8 +691,13 @@ async function fetchTodoRows(memberName) {
   return dropOrphans(results.flat());
 }
 
-const d10 = v => v ? String(v).slice(0, 10) : '–';
-const cell = (v, nowrap) => '<td' + (nowrap ? ' style="white-space:nowrap"' : '') + '>' + esc(v || '–') + '</td>';
+// 日期只顯示月/日，表格比較不擠（今年以外的才顯示年份）
+const d10 = v => {
+  if (!v) return '–';
+  const [y, m, d] = String(v).slice(0, 10).split('-');
+  return (Number(y) === new Date().getFullYear() ? '' : y + '/') + m + '/' + d;
+};
+const cell = (v, cls) => '<td' + (cls ? ' class="' + cls + '"' : '') + '>' + esc(v || '–') + '</td>';
 
 async function loadTodo(memberName) {
   const el = $('todoArea');
@@ -711,13 +719,13 @@ async function loadTodo(memberName) {
     if (isCR) {
       rows.sort((a, b) => (a.expected_submission_date || '9999') > (b.expected_submission_date || '9999') ? 1 : -1);
       head = '<th>Account</th><th>類型</th><th>專案名稱</th><th>管理編號</th><th>預計入稿</th>';
-      trs = rows.map(r => '<tr>' + cell(r.account) + cell(r.work_subcategory) + cell(r.project_name) +
-        cell(r.management_id) + cell(d10(r.expected_submission_date), true) + '</tr>').join('');
+      trs = rows.map(r => '<tr>' + cell(r.account) + cell(r.work_subcategory) + cell(r.project_name, 'pname') +
+        cell(r.management_id) + cell(d10(r.expected_submission_date)) + '</tr>').join('');
     } else {
       rows.sort((a, b) => (b.date || '') > (a.date || '') ? 1 : (b.date || '') < (a.date || '') ? -1 : 0);
       head = '<th>Date</th><th>AE</th><th>Account</th><th>類型</th><th>專案名稱</th><th>管理編號</th><th>BRIEF日期</th>';
-      trs = rows.map(r => '<tr>' + cell(d10(r.date), true) + cell(r.ae_owner) + cell(r.account) + cell(r.work_subcategory) +
-        cell(r.project_name) + cell(r.management_id) + cell(d10(r.brief_date), true) + '</tr>').join('');
+      trs = rows.map(r => '<tr>' + cell(d10(r.date)) + cell(r.ae_owner) + cell(r.account) + cell(r.work_subcategory) +
+        cell(r.project_name, 'pname') + cell(r.management_id) + cell(d10(r.brief_date)) + '</tr>').join('');
     }
     el.innerHTML = '<table class="todo-table"><thead><tr>' + head + '</tr></thead><tbody>' + trs + '</tbody></table>';
   } catch (e) {
@@ -738,7 +746,7 @@ async function start() {
   if (!session) { showLogin(); return; }
 
   const email = (session.user.email || '').toLowerCase();
-  const { data: me } = await sb.from('cr_members').select('name').eq('email', email).eq('active', true).maybeSingle();
+  const { data: me } = await sb.from('cr_members').select('name').eq('email', email).eq('active').maybeSingle();
   const isCR = !!me;
   const displayName = isCR ? me.name : email.split('@')[0].toUpperCase();
 
