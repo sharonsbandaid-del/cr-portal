@@ -746,7 +746,18 @@ async function start() {
   if (!session) { showLogin(); return; }
 
   const email = (session.user.email || '').toLowerCase();
-  const { data: me } = await sb.from('cr_members').select('name').eq('email', email).eq('active').maybeSingle();
+  const { data: me, error: meErr } = await sb.from('cr_members')
+    .select('name').eq('email', email).eq('active', true).maybeSingle();
+  if (meErr) {
+    // 查不到身份時不要默默當成非 CR，直接顯示錯誤
+    $('loginGate').hidden = true;
+    document.body.classList.add('authed');
+    $('whoami').textContent = email;
+    $('todoArea').innerHTML = '<p class="todo-msg">無法確認身份：' + esc(meErr.message || '') + '（請重新整理，或聯絡 CHOCO）</p>';
+    loadAttendance();
+    loadMarquee();
+    return;
+  }
   const isCR = !!me;
   const displayName = isCR ? me.name : email.split('@')[0].toUpperCase();
 
