@@ -649,6 +649,25 @@ dialog.pdlg { background: var(--w-face); border: 0; border-radius: 0; box-shadow
 dialog.pdlg h3 { margin: 0 0 10px; }
 dialog.pdlg form > :not(h3) { margin-left: 12px; margin-right: 12px; }
 dialog.pdlg p { color: #000; }
+
+/* ════════════════════════════════════════════════
+   太空迪斯可：只保留跑馬燈（霓虹螢幕）
+   ════════════════════════════════════════════════ */
+.marquee-zone {
+  background:
+    radial-gradient(120% 140% at 50% 120%, rgba(240,120,210,.45), transparent 60%),
+    linear-gradient(180deg, #120a3a 0%, #2a1767 100%);
+}
+.marquee-zone::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.18) 2px 3px);
+  pointer-events: none;
+}
+.marquee-seg {
+  color: #ffe3fa;
+  text-shadow: 0 0 6px #ff8fe0, 0 0 16px rgba(255,143,224,.8), 2px 0 0 rgba(143,232,255,.55);
+}
 </style>
 
 <div class="login-gate" id="loginGate" hidden>
