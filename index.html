@@ -1041,6 +1041,15 @@ img.dicon-img, svg.dicon-img, img.oicon-img, svg.oicon-img,
 .sec-stack:not(.mid-stack) > .sec { flex: 1 1 0; display: flex; flex-direction: column; }
 .sec-stack:not(.mid-stack) .other-btn { flex: 1 1 0; min-height: 34px; max-height: 64px; display: flex; align-items: center; }
 @media (max-width: 600px) { .sec-stack:not(.mid-stack) > .sec, .sec-stack:not(.mid-stack) .other-btn { flex: 0 0 auto; } }
+
+/* 公告：跑馬燈加高、字放大；本日出勤字和標籤放大 */
+.marquee-zone { padding: clamp(18px, 2.2vw, 34px) 0 clamp(16px, 1.9vw, 30px); }
+.marquee-seg { font-size: clamp(26px, 3vw, 48px); }
+.att-zone { padding: 10px 8px 8px; gap: 8px; }
+.att-label { font-size: clamp(13px, 1vw, 15px); }
+.att-chip { font-size: clamp(13px, 1vw, 15px); padding: 4px 12px; }
+.att-empty { font-size: clamp(13px, 1vw, 15px); }
+@media (max-width: 600px) { .marquee-seg { font-size: 30px; } }
 </style>
 
 <div class="login-gate" id="loginGate" hidden>
