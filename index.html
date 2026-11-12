@@ -1050,6 +1050,25 @@ img.dicon-img, svg.dicon-img, img.oicon-img, svg.oicon-img,
 .att-chip { font-size: clamp(13px, 1vw, 15px); padding: 4px 12px; }
 .att-empty { font-size: clamp(13px, 1vw, 15px); }
 @media (max-width: 600px) { .marquee-seg { font-size: 30px; } }
+
+/* ── 忘記密碼／修改密碼 ── */
+.forgot { display: block; margin: 10px 14px 0; font-size: 12px; color: #000080; text-align: right; }
+.forgot:hover { text-decoration: underline; }
+.pw-ok { color: #0a6b2a; font-size: 12px; min-height: 16px; margin-bottom: 8px; line-height: 1.5; }
+dialog.pdlg .field { margin-left: 12px; margin-right: 12px; }
+#fpMsg, #pwMsg { line-height: 1.5; }
+
+/* 登入畫面：忘記密碼提示 */
+p.forgot { color: #333; text-align: center; margin-top: 10px; }
+/* 公告：右下角小字 by */
+.marquee-by {
+  position: absolute; right: 10px; bottom: 6px; z-index: 2;
+  font: 11px/1 var(--w-font); letter-spacing: .04em;
+  color: rgba(255,227,250,.75);
+  text-shadow: 0 0 4px rgba(255,143,224,.6);
+  pointer-events: none;
+}
+p.forgot a { color: #000080; text-decoration: underline; }
 </style>
 
 <div class="login-gate" id="loginGate" hidden>
@@ -1060,6 +1079,7 @@ img.dicon-img, svg.dicon-img, img.oicon-img, svg.oicon-img,
     <label class="field">密碼<input type="password" id="loginPw" autocomplete="current-password" required></label>
     <div class="login-err" id="loginErr"></div>
     <button type="submit" class="pbtn primary" id="loginSubmit">登入</button>
+    <p class="forgot"><a href="#" id="forgotLink">忘記密碼？</a></p>
   </form>
 </div>
 
@@ -1076,11 +1096,38 @@ img.dicon-img, svg.dicon-img, img.oicon-img, svg.oicon-img,
   </form>
 </dialog>
 
+<dialog class="pdlg" id="fpDlg">
+  <form id="fpForm">
+    <h3 class="win-title">忘記密碼</h3>
+    <p>輸入你登入用的 email，系統會寄一封重設密碼的信給你。</p>
+    <label class="field">Email<input type="email" id="fpEmail" autocomplete="email" required></label>
+    <div class="login-err" id="fpMsg"></div>
+    <div class="dlg-actions">
+      <button type="button" class="pbtn" id="fpCancel">取消</button>
+      <button type="submit" class="pbtn primary" id="fpSend">寄出</button>
+    </div>
+  </form>
+</dialog>
+<dialog class="pdlg" id="pwDlg">
+  <form id="pwForm">
+    <h3 class="win-title" id="pwTitle">修改密碼</h3>
+    <p id="pwNote"></p>
+    <label class="field">新密碼<input type="password" id="pwNew" autocomplete="new-password" minlength="6" required></label>
+    <label class="field">再輸入一次<input type="password" id="pwNew2" autocomplete="new-password" minlength="6" required></label>
+    <div class="login-err" id="pwMsg"></div>
+    <div class="dlg-actions">
+      <button type="button" class="pbtn" id="pwCancel">取消</button>
+      <button type="submit" class="pbtn primary" id="pwSave">儲存</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="portal">
 
   <div class="who-row">
     <div class="greeting" id="greetLine">早安 ☀️</div>
     <span class="whoami" id="whoami"></span>
+    <button class="ghost-btn" id="changePwBtn">修改密碼</button>
     <button class="ghost-btn" id="logoutBtn">登出</button>
   </div>
 
@@ -1096,6 +1143,7 @@ img.dicon-img, svg.dicon-img, img.oicon-img, svg.oicon-img,
       <div class="win-title">公告.exe</div>
       <div class="marquee-zone">
         <button class="marquee-edit" id="marqueeEditBtn">✎ 編輯公告</button>
+        <span class="marquee-by" id="marqueeBy"></span>
         <div class="marquee-track" id="marqueeTrack">
           <span class="marquee-seg" id="marqueeSeg1"> </span>
           <span class="marquee-seg" id="marqueeSeg2"> </span>
@@ -1254,6 +1302,12 @@ async function loadMarquee() {
   if (!error && data) {
     setMarquee(data.text);
     $('marqueeEditBtn').title = data.updated_by ? '最後修改：' + data.updated_by : '';
+    let who = '';
+    if (data.updated_by) {
+      const { data: m } = await sb.from('cr_members').select('name').eq('email', data.updated_by.toLowerCase()).maybeSingle();
+      who = m ? m.name : data.updated_by.split('@')[0].toUpperCase();
+    }
+    $('marqueeBy').textContent = who ? 'by ' + who : '';
   }
 }
 $('marqueeEditBtn').addEventListener('click', () => {
@@ -1273,6 +1327,7 @@ $('annForm').addEventListener('submit', async e => {
   if (error) { $('annErr').textContent = '儲存失敗：' + error.message; return; }
   setMarquee(txt);
   $('annDlg').close();
+  loadMarquee();
 });
 
 // ───────── 本日出勤 ─────────
@@ -1441,4 +1496,74 @@ start();
   if (el) el.textContent = (h % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM');
   setTimeout(trayTick, (60 - d.getSeconds()) * 1000);
 })();
+
+// ───────── 密碼：忘記密碼／修改密碼 ─────────
+const PORTAL_URL = location.origin + location.pathname;
+let pwRecovery = /type=recovery/.test(location.hash);
+
+$('forgotLink').addEventListener('click', e => {
+  e.preventDefault();
+  $('fpEmail').value = $('loginEmail').value.trim();
+  $('fpMsg').textContent = ''; $('fpMsg').className = 'login-err';
+  $('fpSend').disabled = false;
+  $('fpDlg').showModal(); $('fpEmail').focus();
+});
+$('fpCancel').addEventListener('click', () => $('fpDlg').close());
+$('fpForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('fpEmail').value.trim().toLowerCase();
+  $('fpSend').disabled = true; $('fpMsg').className = 'login-err'; $('fpMsg').textContent = '寄送中…';
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: PORTAL_URL });
+  if (error) {
+    $('fpSend').disabled = false;
+    $('fpMsg').textContent = /rate|security purposes/i.test(error.message || '')
+      ? '寄太多次了，請過一陣子再試，或聯絡 CHOCO'
+      : '寄送失敗，請聯絡 CHOCO（' + (error.message || '') + '）';
+    return;
+  }
+  $('fpMsg').className = 'pw-ok';
+  $('fpMsg').textContent = '已寄出 ✓ 請到信箱收信（也看一下垃圾郵件）。收不到請聯絡 CHOCO。';
+});
+
+function openPw(recovery) {
+  pwRecovery = recovery;
+  $('pwTitle').textContent = recovery ? '設定新密碼' : '修改密碼';
+  $('pwNote').textContent = recovery
+    ? '請設定一組新密碼，之後登入 CR 大平台和 CR 大表都用這組。'
+    : '新密碼會同時套用到 CR 大平台和 CR 大表。';
+  $('pwNew').value = ''; $('pwNew2').value = '';
+  $('pwMsg').textContent = ''; $('pwMsg').className = 'login-err';
+  $('pwDlg').showModal();
+  $('pwNew').focus();
+}
+$('changePwBtn').addEventListener('click', () => openPw(false));
+$('pwCancel').addEventListener('click', () => $('pwDlg').close());
+$('pwForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const p1 = $('pwNew').value, p2 = $('pwNew2').value;
+  $('pwMsg').className = 'login-err';
+  if (p1.length < 6) { $('pwMsg').textContent = '密碼至少要 6 個字元'; return; }
+  if (p1 !== p2)     { $('pwMsg').textContent = '兩次輸入的密碼不一樣'; return; }
+  $('pwSave').disabled = true;
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  $('pwSave').disabled = false;
+  if (error) {
+    $('pwMsg').textContent = /same|different/i.test(error.message || '')
+      ? '新密碼不能跟舊密碼一樣'
+      : '修改失敗：' + (error.message || '請重新登入再試');
+    return;
+  }
+  $('pwMsg').className = 'pw-ok';
+  $('pwMsg').textContent = '密碼已更新 ✓';
+  setTimeout(() => {
+    $('pwDlg').close();
+    if (pwRecovery) { pwRecovery = false; history.replaceState(null, '', PORTAL_URL); start(); }
+  }, 1200);
+});
+
+// 從重設信的連結回來時，跳出「設定新密碼」
+sb.auth.onAuthStateChange(event => {
+  if (event === 'PASSWORD_RECOVERY') setTimeout(() => openPw(true), 0);
+});
+if (pwRecovery) setTimeout(() => { if (!$('pwDlg').open) openPw(true); }, 1500);
 </script>
