@@ -428,11 +428,232 @@ dialog.pdlg::backdrop { background: rgba(0,0,0,.4); }
 .pdlg p { font-size: 12px; color: var(--fg-muted); margin-bottom: 12px; }
 .ann-input { width: 100%; margin-bottom: 6px; }
 .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ════════════════════════════════════════════════
+   Win98 主題（疊加在原本樣式之上）
+   背景：bg.jpg（放在 repo 同一層）
+   ════════════════════════════════════════════════ */
+:root {
+  --w-face:   #c0c0c0;   /* 視窗灰 */
+  --w-light:  #ffffff;   /* 亮邊 */
+  --w-shade:  #808080;   /* 暗邊 */
+  --w-dark:   #0a0a0a;   /* 最外暗邊 */
+  --w-title1: #000080;   /* 標題列漸層 */
+  --w-title2: #1084d0;
+  --w-font:   'Tahoma', 'Segoe UI', 'Noto Sans TC', sans-serif;
+  --w-pixel:  'BoutiqueBitmap', 'Tahoma', 'Noto Sans TC', sans-serif;
+  /* 凸起（視窗、按鈕） */
+  --w-raised: inset -1px -1px 0 var(--w-dark), inset 1px 1px 0 var(--w-light),
+              inset -2px -2px 0 var(--w-shade), inset 2px 2px 0 #dfdfdf;
+  /* 凹陷（輸入框、清單） */
+  --w-sunken: inset 1px 1px 0 var(--w-shade), inset -1px -1px 0 var(--w-light),
+              inset 2px 2px 0 var(--w-dark), inset -2px -2px 0 #dfdfdf;
+  /* 按下 */
+  --w-pressed: inset 1px 1px 0 var(--w-dark), inset -1px -1px 0 var(--w-light),
+               inset 2px 2px 0 var(--w-shade);
+}
+
+body {
+  font-family: var(--w-font);
+  background: #000 url('bg.jpg') center bottom / cover no-repeat fixed;
+  padding-block: 18px 22px;
+}
+
+/* 頁首問候 */
+.greeting { color: #fff; text-shadow: 2px 2px 0 #000; font-family: var(--w-pixel); font-weight: 400; font-size: 22px; letter-spacing: .04em; }
+.whoami   { color: #d6d6d6; text-shadow: 1px 1px 0 #000; }
+.ghost-btn {
+  background: var(--w-face); color: #000; border: 0; border-radius: 0;
+  box-shadow: var(--w-raised); padding: 4px 12px;
+}
+.ghost-btn:active { box-shadow: var(--w-pressed); }
+
+/* ── 視窗 ── */
+.memo-card, .marquee-card, .sec, .others-band {
+  background: var(--w-face);
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--w-raised);
+  padding: 3px;
+  color: #000;
+}
+
+/* 標題列 */
+.sec-label, .memo-label, .win-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 6px;
+  padding: 3px 3px 3px 6px;
+  min-height: 22px;
+  background: linear-gradient(90deg, var(--w-title1), var(--w-title2));
+  color: #fff;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--w-pixel);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: .05em;
+  line-height: 1.2;
+}
+.sec-label::after, .memo-label::after, .win-title::after {
+  content: '✕';
+  flex: 0 0 auto;
+  width: 16px; height: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--w-face);
+  color: #000;
+  font: 700 9px/1 var(--w-font);
+  box-shadow: var(--w-raised);
+}
+/* 覆蓋原本各區塊的標題底色 */
+.sec.todo-sec .sec-label, .sec.result-sec .sec-label, .sec.tool-sec .sec-label,
+.sec.other-sec .sec-label, .others-band .sec-label { background: linear-gradient(90deg, var(--w-title1), var(--w-title2)); }
+
+/* 視窗內容與邊框保持距離 */
+.sec > :not(.sec-label) { margin-left: 5px; margin-right: 5px; }
+.sec > :last-child { margin-bottom: 5px; }
+.memo-card textarea { margin: 0 5px 5px; }
+
+/* ── 備忘錄（記事本）── */
+.memo-card { min-height: 156px; }
+.memo-card textarea {
+  background: #fff;
+  border-radius: 0;
+  box-shadow: var(--w-sunken);
+  padding: 6px 8px;
+  font-family: 'Courier New', 'Noto Sans TC', monospace;
+  color: #000;
+}
+
+/* ── 公告＋出勤 ── */
+.win-title { margin-bottom: 4px; }
+.marquee-zone {
+  margin: 0 5px;
+  box-shadow: var(--w-sunken);
+  padding: 20px 0 16px;
+  background: #000;
+}
+.att-zone { background: transparent; padding: 8px 6px 4px; }
+.att-label { color: #000; }
+.att-chip {
+  background: var(--w-face); color: #000; border: 0; border-radius: 0;
+  box-shadow: var(--w-raised); padding: 3px 10px;
+}
+.att-empty { color: #333; }
+
+/* ── 按鈕 ── */
+.ql, .res-btn, .tool-btn, .other-btn, .ob, .tag-row a {
+  background: var(--w-face) !important;
+  color: #000;
+  border: 0;
+  border-radius: 0;
+  box-shadow: var(--w-raised);
+  filter: none !important;
+  transition: none;
+}
+.ql:active, .res-btn:active, .tool-btn:active, .other-btn:active, .ob:active, .tag-row a:active {
+  box-shadow: var(--w-pressed);
+  padding-top: calc(var(--pt, 0px) + 1px);
+}
+.ql:hover, .res-btn:hover, .tool-btn:hover, .other-btn:hover, .ob:hover, .tag-row a:hover {
+  outline: 1px dotted #000; outline-offset: -5px;
+}
+.ql:focus-visible, .res-btn:focus-visible, .tool-btn:focus-visible, .other-btn:focus-visible, .ob:focus-visible {
+  outline: 1px dotted #000; outline-offset: -5px;
+}
+.res-btn[style*="cursor:default"]:hover { outline: none; }
+
+/* 快速入口：大按鈕 */
+.ql { font-family: var(--w-pixel); font-weight: 400; font-size: 16px; letter-spacing: .06em; padding: 20px 10px; }
+
+/* 成果們的小標籤 */
+.tag-row a { font-size: 10px; padding: 2px 8px; }
+
+/* ── 待辦清單（白底清單框）── */
+.todo-wrap { background: #fff; box-shadow: var(--w-sunken); padding: 2px; }
+.todo-table th {
+  background: var(--w-face);
+  color: #000;
+  box-shadow: var(--w-raised);
+  border-bottom: 0;
+  font-weight: 400;
+}
+.todo-table td { border-bottom: 1px solid #e4e4e4; color: #000; }
+.todo-table tr:hover td { background: #000080; color: #fff; }
+.todo-msg { color: #333; padding: 8px; }
+
+/* ── 高度拉高 20% ── */
+.main-grid { grid-auto-rows: 396px; gap: 12px; }
+.top-grid { gap: 12px; }
+.ob { min-height: 82px; }
+
+/* ── 其他的其他 ── */
+.others-band { padding: 3px 3px 8px; }
+.others-band > div:first-child { display: flex; flex-direction: column; }
+.others-hint { color: #333; margin: 0 8px 4px; }
+.others-grid { margin: 6px 8px 0; gap: 8px; }
+
+/* ── 底部：工作列 ── */
+.footer-band {
+  background: var(--w-face);
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 #dfdfdf, inset 0 2px 0 var(--w-light);
+  padding: 5px 6px;
+  gap: 6px;
+}
+.footer-band::before {
+  content: '開始';
+  font: 700 13px/1 var(--w-font);
+  color: #000;
+  padding: 6px 12px 6px 30px;
+  box-shadow: var(--w-raised);
+  background: var(--w-face) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='1' width='6' height='6' fill='%23e33'/%3E%3Crect x='9' y='1' width='6' height='6' fill='%233b3'/%3E%3Crect x='1' y='9' width='6' height='6' fill='%2336e'/%3E%3Crect x='9' y='9' width='6' height='6' fill='%23fc2'/%3E%3C/svg%3E") 9px center / 14px no-repeat;
+}
+.footer-band a {
+  color: #000;
+  text-decoration: none;
+  font-size: 12px;
+  padding: 5px 12px;
+  box-shadow: var(--w-raised);
+  background: var(--w-face);
+}
+.footer-band a:hover { color: #000; outline: 1px dotted #000; outline-offset: -4px; }
+.footer-band a:active { box-shadow: var(--w-pressed); }
+
+/* ── 公告編輯按鈕 ── */
+.marquee-edit { border-radius: 0; }
+
+/* ── 登入視窗 ── */
+.login-gate { background: #000 url('bg.jpg') center bottom / cover no-repeat; }
+.login-box {
+  background: var(--w-face); border: 0; border-radius: 0; box-shadow: var(--w-raised);
+  padding: 3px 3px 16px;
+}
+.login-box h2.win-title, dialog.pdlg h3.win-title { margin: 0 0 12px; font-size: 13px; font-weight: 400; }
+.login-box > :not(h2) { margin-left: 14px; margin-right: 14px; }
+.login-box p { color: #000; }
+.login-box .pbtn.primary { width: calc(100% - 28px); }
+.field input, .ann-input {
+  border: 0; border-radius: 0; background: #fff; box-shadow: var(--w-sunken); padding: 7px 9px;
+}
+.pbtn {
+  background: var(--w-face); border: 0; border-radius: 0; box-shadow: var(--w-raised); color: #000;
+}
+.pbtn.primary { background: var(--w-face); outline: 1px solid #000; outline-offset: -1px; }
+.pbtn:active { box-shadow: var(--w-pressed); }
+dialog.pdlg { background: var(--w-face); border: 0; border-radius: 0; box-shadow: var(--w-raised), 0 10px 30px rgba(0,0,0,.4); padding: 3px 3px 14px; }
+dialog.pdlg h3 { margin: 0 0 10px; }
+dialog.pdlg form > :not(h3) { margin-left: 12px; margin-right: 12px; }
+dialog.pdlg p { color: #000; }
 </style>
 
 <div class="login-gate" id="loginGate" hidden>
   <form class="login-box" id="loginForm">
-    <h2>CR大平台</h2>
+    <h2 class="win-title">CR大平台 — 登入</h2>
     <p>請用 CR 大表（Creative）的帳號密碼登入</p>
     <label class="field">Email<input type="email" id="loginEmail" autocomplete="username" required></label>
     <label class="field">密碼<input type="password" id="loginPw" autocomplete="current-password" required></label>
@@ -443,7 +664,7 @@ dialog.pdlg::backdrop { background: rgba(0,0,0,.4); }
 
 <dialog class="pdlg" id="annDlg">
   <form id="annForm">
-    <h3>編輯跑馬燈公告</h3>
+    <h3 class="win-title">編輯跑馬燈公告</h3>
     <p>儲存後所有人重新整理就會看到</p>
     <input class="ann-input" id="annInput" maxlength="80" placeholder="例如：🎉 本週五下午大掃除">
     <div class="login-err" id="annErr"></div>
@@ -466,11 +687,12 @@ dialog.pdlg::backdrop { background: rgba(0,0,0,.4); }
   <div class="top-grid">
 
     <div class="memo-card">
-      <div class="memo-label">我的備忘錄</div>
+      <div class="memo-label">我的備忘錄 - 記事本</div>
       <textarea id="memoArea" placeholder="在這裡記下今日備忘…"></textarea>
     </div>
 
     <div class="marquee-card">
+      <div class="win-title">公告.exe</div>
       <div class="marquee-zone">
         <button class="marquee-edit" id="marqueeEditBtn">✎ 編輯公告</button>
         <div class="marquee-track" id="marqueeTrack">
@@ -539,9 +761,9 @@ dialog.pdlg::backdrop { background: rgba(0,0,0,.4); }
       <div class="sec-label">其他</div>
       <a class="other-btn" href="https://apps.powerapps.com/play/e/default-a8bee0b6-81a4-4051-9aef-b24207946646/a/fc6beba9-3e59-4b7e-a38c-eb2c2a4ddfce?tenantId=a8bee0b6-81a4-4051-9aef-b24207946646" target="_blank">大廣備品所</a>
       <a class="other-btn" href="https://nakayama.hakuhodo.com.tw/mrbs/" target="_blank">共用會議室</a>
-      <a class="other-btn" href="https://secure.adobesign.com/public/login" target=" target="_blank">電子簽核</a>
+      <a class="other-btn" href="https://secure.adobesign.com/public/login" target="_blank">電子簽核</a>
       <a class="other-btn" href="https://daikoadmin-my.sharepoint.com/shared?listurl=https%3A%2F%2Fdaikoadmin%2Dmy%2Esharepoint%2Ecom%2Fpersonal%2Fkazuya%5Faoki%5Fdaiko%5Ftw%2FDocuments&id=%2Fpersonal%2Fkazuya%5Faoki%5Fdaiko%5Ftw%2FDocuments%2F%E5%8F%B0%E5%8C%97CC%E5%81%B4%E5%85%B1%E6%9C%89%2FAD%2FTVC&shareLink=1&ga=1" target="_blank">素材共有區</a>
-            <a class="other-btn" href="https://daikoadmin.sharepoint.com/:u:/r/sites/DaikoTaiwan/SitePages/ProjectHome.aspx?d=w72c4aef55e6e4c9fb5f1022c038b51c9&csf=1&web=1&e=31pZ6u" target="_blank">大廣社內網</a>
+      <a class="other-btn" href="https://daikoadmin.sharepoint.com/:u:/r/sites/DaikoTaiwan/SitePages/ProjectHome.aspx?d=w72c4aef55e6e4c9fb5f1022c038b51c9&csf=1&web=1&e=31pZ6u" target="_blank">大廣社內網</a>
     </div>
 
   </div>
