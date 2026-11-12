@@ -1324,7 +1324,7 @@ async function fetchTodoRows(memberName) {
     if (error) throw error;
     return dropOrphans(data || []);
   }
-  const fields = ['cr1', 'cr2', 'cr3', '文案'];
+  const fields = ['cr1', 'cr2', 'cr3', 'copywriter'];
   const results = await Promise.all(fields.map(f =>
     sb.from('projects').select(PROJECT_COLS).eq('status', CR_TODO_STATUS).eq(f, memberName)
       .then(r => r.data || [])
