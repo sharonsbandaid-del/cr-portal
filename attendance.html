@@ -200,13 +200,183 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
   font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200;
 }
 .toast.show { opacity: 1; }
+
+/* ════════════ Win98 主題（跟 CR大平台一致）════════════ */
+@font-face { font-family: 'BoutiqueBitmap'; src: url('BoutiqueBitmap9x9HK_Bold_1.93.ttf') format('truetype'); }
+:root {
+  --w-face: #c0c0c0; --w-light: #fff; --w-shade: #808080; --w-dark: #0a0a0a;
+  --w-title1: #000080; --w-title2: #1084d0;
+  --w-font: 'Tahoma', 'Segoe UI', 'Noto Sans TC', sans-serif;
+  --w-pixel: 'BoutiqueBitmap', 'Tahoma', 'Noto Sans TC', sans-serif;
+  --w-raised: inset -1px -1px 0 var(--w-dark), inset 1px 1px 0 var(--w-light), inset -2px -2px 0 var(--w-shade), inset 2px 2px 0 #dfdfdf;
+  --w-sunken: inset 1px 1px 0 var(--w-shade), inset -1px -1px 0 var(--w-light), inset 2px 2px 0 var(--w-dark), inset -2px -2px 0 #dfdfdf;
+  --w-pressed: inset 1px 1px 0 var(--w-dark), inset -1px -1px 0 var(--w-light), inset 2px 2px 0 var(--w-shade);
+  --grid: #c8c8c8;
+  --st-leave: #fff27a; --st-home: #bfe3ff; --st-sick: #ffc4ba; --st-event: #b7f5a0; --st-other: #e4e4e4;
+}
+body {
+  font-family: var(--w-font); font-weight: 400; color: #000;
+  background: #000 url('bg.jpg') center 25% / cover no-repeat fixed;
+  padding: clamp(10px, 2.2vw, 22px) clamp(8px, 3vw, 40px) 22px;
+  min-height: 100vh;
+}
+.wrap { max-width: 1500px; gap: 12px; }
+
+/* 頁首 */
+.top { gap: 10px 12px; }
+h1 { color: #fff; text-shadow: 2px 2px 0 #000; font-family: var(--w-pixel); font-weight: 400; font-size: clamp(18px, 2vw, 24px); letter-spacing: .05em; }
+.who { color: #e0e0e0; text-shadow: 1px 1px 0 #000; }
+
+/* 按鈕 */
+.btn, .back, .nav {
+  background: var(--w-face); color: #000; border: 0; border-radius: 0;
+  box-shadow: var(--w-raised); padding: 4px 12px; font: 12px var(--w-font); cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 24px;
+}
+.btn:hover, .back:hover { filter: none; text-decoration: none; color: #000; }
+.btn:active, .back:active, .nav:active { box-shadow: var(--w-pressed); }
+.btn:focus-visible, .nav:focus-visible { outline: 1px dotted #000; outline-offset: -5px; }
+.btn.primary { background: var(--w-face); font-weight: 700; outline: 1px solid #000; outline-offset: -1px; }
+.btn:disabled { color: var(--w-shade); text-shadow: 1px 1px 0 #fff; opacity: 1; }
+.nav { width: 26px; height: 24px; padding: 0; border-radius: 0; font-size: 13px; }
+.nav:hover { background: var(--w-face); }
+
+/* 視窗 */
+.win {
+  background: var(--w-face); box-shadow: var(--w-raised), 6px 6px 0 rgba(0,0,0,.35);
+  padding: 3px; display: flex; flex-direction: column;
+}
+.win-title {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 3px 3px 3px 6px; min-height: 22px;
+  background: linear-gradient(90deg, var(--w-title1), var(--w-title2)); color: #fff;
+  font-family: var(--w-pixel); font-size: 13px; font-weight: 400; letter-spacing: .05em; line-height: 1.2;
+}
+.win-title .wbtns { display: flex; gap: 2px; }
+.win-title .wbtns i, .win-title.x::after {
+  width: 16px; height: 14px; display: flex; align-items: center; justify-content: center;
+  background: var(--w-face); color: #000; box-shadow: var(--w-raised);
+  font: 700 9px/1 var(--w-font); font-style: normal;
+}
+.win-title.x::after { content: '✕'; flex: 0 0 auto; }
+
+/* 工具列（月份＋圖例） */
+.bar {
+  background: transparent; border: 0; border-radius: 0; padding: 6px 6px 7px;
+  box-shadow: 0 1px 0 var(--w-light), inset 0 -1px 0 var(--w-shade);
+  margin-bottom: 4px;
+}
+.month strong {
+  font-family: var(--w-pixel); font-weight: 400; font-size: 15px; letter-spacing: .04em;
+  background: #fff; box-shadow: var(--w-sunken); padding: 4px 10px; min-width: 128px;
+}
+.legend { color: #000; gap: 4px 12px; }
+.legend i, .legend .half { border-radius: 0; border: 1px solid #000; }
+
+/* 表格區（凹陷白底） */
+.grid-wrap {
+  background: #fff; border: 0; border-radius: 0; box-shadow: var(--w-sunken); padding: 2px;
+  max-height: calc(100vh - 205px);
+}
+.grid-wrap::-webkit-scrollbar { width: 16px; height: 16px; }
+.grid-wrap::-webkit-scrollbar-track { background: repeating-conic-gradient(#dfdfdf 0 25%, #fff 0 50%) 0 0 / 2px 2px; }
+.grid-wrap::-webkit-scrollbar-thumb { background: var(--w-face); box-shadow: var(--w-raised); }
+.grid-wrap::-webkit-scrollbar-corner { background: var(--w-face); }
+.grid-wrap::-webkit-scrollbar-button:single-button { width: 16px; height: 16px; background: var(--w-face); box-shadow: var(--w-raised); display: block; }
+
+thead th {
+  background: var(--w-face); box-shadow: var(--w-raised); border-color: transparent;
+  font-family: var(--w-font); font-weight: 700; padding: 4px 0 3px;
+}
+thead th small { color: #333; }
+thead th.off { background: #a9a9a9; color: #333; }
+thead th.off small { color: #444; }
+thead th.today { background: linear-gradient(180deg, var(--w-title1), var(--w-title2)); color: #fff; }
+thead th.today small { color: #dfe8ff; }
+th.name, td.name { background: var(--w-face); border-right: 1px solid var(--w-shade); box-shadow: inset -1px 0 0 var(--w-light); }
+thead th.name { background: var(--w-face); box-shadow: var(--w-raised); font-family: var(--w-pixel); font-weight: 400; letter-spacing: .05em; }
+td.name b { font-family: var(--w-pixel); font-weight: 400; font-size: 13px; letter-spacing: .04em; }
+td.name.me { background: #ffffe1; }
+td.name.me b::after { color: #000080; }
+tr.team td {
+  background: #000080; color: #fff; font-family: var(--w-pixel); font-weight: 400;
+  font-size: 12px; letter-spacing: .06em; border-bottom: 1px solid #000; padding: 3px 10px;
+}
+tr.team td.name { background: #000080; box-shadow: none; border-right-color: #000080; }
+td.cell.off { background: repeating-linear-gradient(45deg, #ececec 0 4px, #e0e0e0 4px 8px); }
+td.cell.today { box-shadow: inset 2px 0 0 #000080, inset -2px 0 0 #000080; }
+body.can-edit .cell button:hover { outline: 1px dotted #000; outline-offset: -3px; }
+.cell .h + .h { border-top: 1px dotted rgba(0,0,0,.35); }
+
+/* 狀態列 */
+.statusbar { display: flex; gap: 3px; margin-top: 3px; font-size: 11px; }
+.statusbar > * { box-shadow: inset 1px 1px 0 var(--w-shade), inset -1px -1px 0 var(--w-light); padding: 3px 8px; min-height: 20px; color: #000; }
+.statusbar .grow { flex: 1; }
+.status-msg { color: #000; }
+
+/* 對話框 */
+dialog {
+  background: var(--w-face); border: 0; border-radius: 0; padding: 3px 3px 14px;
+  box-shadow: var(--w-raised), 6px 6px 0 rgba(0,0,0,.4); font-family: var(--w-font);
+}
+dialog::backdrop { background: rgba(0,0,0,.35); }
+dialog > :not(.win-title) { margin-left: 12px; margin-right: 12px; }
+dialog .win-title { margin-bottom: 10px; }
+.dlg-sub, .meta { color: #333; }
+.seg { border: 0; border-radius: 0; gap: 0; overflow: visible; }
+.seg button {
+  background: var(--w-face); box-shadow: var(--w-raised); border: 0 !important;
+  font: 12px var(--w-font); padding: 5px 16px;
+}
+.seg button.on { background: #e8e8e8; color: #000; font-weight: 700; box-shadow: var(--w-pressed); }
+.chip {
+  border: 0; border-radius: 0; box-shadow: var(--w-raised); padding: 5px 11px;
+  font: 12px var(--w-font);
+}
+.chip:hover { filter: brightness(1.04); }
+.chip.normal { background: var(--w-face); border-style: none; }
+.chip.on { box-shadow: var(--w-pressed); outline: 1px dotted #000; outline-offset: -4px; }
+.row input, .field input {
+  border: 0; border-radius: 0; background: #fff; box-shadow: var(--w-sunken);
+  padding: 6px 8px; font: 13px var(--w-font);
+}
+.row input:focus, .field input:focus { outline: none; }
+.preview { background: #fff; border: 0; border-radius: 0; box-shadow: var(--w-sunken); }
+.preview b { color: #000; }
+.pv { border-radius: 0; border: 1px solid rgba(0,0,0,.25); }
+.field { color: #000; }
+.err { color: #c00000; }
+
+/* 登入 */
+.login-gate { background: #000 url('bg.jpg') center 25% / cover no-repeat; }
+.login-box {
+  background: var(--w-face); border: 0; border-radius: 0; padding: 3px 3px 16px;
+  box-shadow: var(--w-raised), 6px 6px 0 rgba(0,0,0,.4); width: min(380px, 100%);
+}
+.login-box .win-title { margin-bottom: 12px; }
+.login-box > :not(.win-title) { margin-left: 14px; margin-right: 14px; }
+.login-box p { color: #000; }
+.login-box .btn.primary { width: calc(100% - 28px); padding: 7px; }
+
+.login-box h2.win-title { font-size: 13px; font-weight: 400; margin-bottom: 12px; }
+.chip.s-leave { background: var(--st-leave); } .chip.s-home { background: var(--st-home); }
+.chip.s-sick { background: var(--st-sick); } .chip.s-event { background: var(--st-event); }
+.chip.s-other { background: var(--st-other); }
+/* 提示（黃色小框） */
+.toast { background: #ffffe1; color: #000; border: 1px solid #000; border-radius: 0; box-shadow: 3px 3px 0 rgba(0,0,0,.4); }
+
+@media (max-width: 600px) {
+  .top .spacer { display: none; }
+  .legend { display: none; }
+  .grid-wrap { max-height: calc(100vh - 190px); }
+}
 </style>
 </head>
 <body>
 
 <div class="login-gate" id="loginGate" hidden>
   <form class="login-box" id="loginForm">
-    <h2>CR大平台</h2>
+    <h2 class="win-title x">CR出勤表 — 登入</h2>
     <p>請用 CR 大表（Creative）的帳號密碼登入</p>
     <label class="field">Email<input type="email" id="loginEmail" autocomplete="username" required></label>
     <label class="field">密碼<input type="password" id="loginPw" autocomplete="current-password" required></label>
@@ -218,13 +388,15 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 <div class="wrap">
 
   <div class="top">
-    <a class="back" href="https://sharonsbandaid-del.github.io/cr-portal/">← 回 CR大平台</a>
+    <a class="back" href="https://sharonsbandaid-del.github.io/cr-portal/">◀ 回 CR大平台</a>
     <h1>CR 出勤表</h1>
     <div class="spacer"></div>
     <span class="who" id="who"></span>
     <button class="btn" id="logoutBtn">登出</button>
   </div>
 
+  <div class="win">
+  <div class="win-title"><span>📅 CR出勤表.exe</span><span class="wbtns"><i>_</i><i>□</i><i>✕</i></span></div>
   <div class="bar">
     <div class="month">
       <button class="nav" id="prevM" aria-label="上個月">‹</button>
@@ -240,16 +412,16 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
       <span><i style="background:#f1f1f1"></i>假日</span>
       <span><b class="half"></b>上下半天不同（上格＝上午）</span>
     </div>
-    <div class="spacer"></div>
-    <span class="status-msg" id="loadMsg"></span>
   </div>
 
   <div class="grid-wrap" id="gridWrap"></div>
+  <div class="statusbar"><span class="grow status-msg" id="loadMsg"></span><span id="modeMsg"></span></div>
+  </div>
 </div>
 
 <!-- 修改出勤 -->
 <dialog id="editDlg">
-  <div class="dlg-title" id="editTitle"></div>
+  <div class="win-title x" id="editTitle"></div>
   <div class="dlg-sub">先選「整天／上午／下午」，再點狀態</div>
   <div class="seg" id="seg">
     <button type="button" data-t="all" class="on">整天</button>
@@ -351,6 +523,7 @@ async function start() {
   $('loginGate').hidden = true;
   document.body.classList.add('authed');
   document.body.classList.toggle('can-edit', canEdit);
+  $('modeMsg').textContent = canEdit ? '點格子即可修改' : '唯讀模式';
   await loadMonth();
 }
 
@@ -383,7 +556,7 @@ async function loadMonth() {
     $('loadMsg').textContent = '資料載入失敗，請重新整理';
   } else {
     rows.forEach(r => { data[r.work_date + '|' + r.member] = r; });
-    $('loadMsg').textContent = '';
+    $('loadMsg').textContent = '共 ' + members.length + ' 人';
   }
   render();
 }
