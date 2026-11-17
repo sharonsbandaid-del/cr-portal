@@ -420,7 +420,11 @@ dialog .win-title { margin-bottom: 10px; }
 .list td.nt { width: 20%; white-space: pre-wrap; word-break: break-word; color: #333; font-size: 12px; }
 .list td.nt a, .note-view a { color: #0000ee; }
 .list td.im { width: 72px; }
-.list td.im img { width: 64px; height: 48px; object-fit: contain; background: #f4f4f4; border: 1px solid #bbb; display: block; }
+.thumb { border: 0; padding: 2px; background: #fff; cursor: zoom-in; box-shadow: var(--w-sunken); display: block; }
+.thumb:focus-visible { outline: 1px dotted #000; outline-offset: 1px; }
+.thumb img { width: 64px; height: 48px; object-fit: contain; background: #f4f4f4; display: block; }
+.thumb:hover img { filter: brightness(1.06); }
+.thumb.big img { width: auto; height: auto; max-width: 160px; max-height: 110px; }
 .list td.ac { width: 40px; text-align: center; }
 .copy { width: 28px; height: 24px; padding: 0; position: relative; }
 .copy-ico { display: block; }
@@ -447,7 +451,7 @@ mark { background: #fff27a; color: inherit; }
 .field textarea:focus, .field input:focus { outline: none; }
 .field .hint { color: #555; font-size: 11px; }
 .img-box { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-.img-box img { max-width: 160px; max-height: 110px; background: #fff; box-shadow: var(--w-sunken); padding: 3px; display: block; }
+
 .img-box .none { color: #555; font-size: 12px; }
 .img-box input[type=file] { display: none; }
 .dlg-actions .left { margin-right: auto; display: flex; gap: 8px; }
@@ -479,6 +483,24 @@ mark { background: #fff27a; color: inherit; }
 #editDlg > form > :not(.win-title) { margin-left: 12px; margin-right: 12px; }
 #editDlg .win-title { margin-bottom: 10px; }
 .list td.it, .list td.bd, .list td.nt { user-select: text; }
+
+.field select {
+  appearance: none; -webkit-appearance: none; border: 0; border-radius: 0; width: 100%;
+  font: 13px var(--w-font); color: #000; padding: 6px 30px 6px 8px; cursor: pointer;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='20'%3E%3Crect width='18' height='20' fill='%23c0c0c0'/%3E%3Cpath d='M0 0h17v1H1v18H0z' fill='%23fff'/%3E%3Cpath d='M17 0h1v20H0v-1h17z' fill='%230a0a0a'/%3E%3Cpath d='M5 8h8l-4 4z' fill='%23000'/%3E%3C/svg%3E") no-repeat right 2px center;
+  box-shadow: var(--w-sunken);
+}
+.field select:focus { outline: 1px dotted #000; outline-offset: -4px; }
+.field select + input { margin-top: 6px; }
+div.field { font-size: 12px; }
+
+#imgDlg { width: min(960px, calc(100vw - 24px)); }
+.img-view {
+  background: #fff repeating-conic-gradient(#f0f0f0 0 25%, #fff 0 50%) 0 0 / 16px 16px; box-shadow: var(--w-sunken);
+  padding: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center;
+  max-height: calc(100vh - 160px); overflow: auto;
+}
+.img-view img { max-width: 100%; max-height: calc(100vh - 180px); display: block; }
 </style>
 </head>
 <body>
@@ -524,11 +546,15 @@ mark { background: #fff27a; color: inherit; }
   <form method="dialog" id="editForm">
     <div class="win-title x" id="editTitle">新增保文</div>
     <div class="form-grid">
-      <label class="field">商品 *<input id="fProduct" list="prodList" required maxlength="40" autocomplete="off"></label>
-      <label class="field">分類<input id="fCategory" list="catList" maxlength="40" autocomplete="off" placeholder="例：愛用滿意類（可空白）"></label>
+      <div class="field">商品 *
+        <select id="fProductSel" aria-label="商品"></select>
+        <input id="fProductNew" hidden maxlength="40" autocomplete="off" placeholder="輸入新商品名稱" aria-label="新商品名稱">
+      </div>
+      <div class="field">分類
+        <select id="fCategorySel" aria-label="分類"></select>
+        <input id="fCategoryNew" hidden maxlength="40" autocomplete="off" placeholder="輸入新分類名稱" aria-label="新分類名稱">
+      </div>
     </div>
-    <datalist id="prodList"></datalist>
-    <datalist id="catList"></datalist>
     <label class="field">項目 *<input id="fItem" required maxlength="200" placeholder="例：顧客滿意度96.9%"></label>
     <label class="field">保文<textarea id="fBody" rows="5" placeholder="資料來源、調查期間、樣本數…"></textarea></label>
     <label class="field">補充說明<textarea id="fNote" rows="2"></textarea>
@@ -558,6 +584,17 @@ mark { background: #fff27a; color: inherit; }
   <div class="win-title x" id="histTitle">修改紀錄</div>
   <div class="hist-list" id="histList"></div>
   <div class="dlg-actions"><button type="button" class="btn" id="histClose">關閉</button></div>
+</dialog>
+
+<!-- 看大圖 -->
+<dialog id="imgDlg">
+  <div class="win-title x" id="imgTitle">附圖</div>
+  <div class="img-view"><img id="imgBig" alt=""></div>
+  <div class="dlg-actions">
+    <button type="button" class="btn" id="imgOpen">在新分頁開啟</button>
+    <button type="button" class="btn primary" id="imgDownload">⤓ 下載圖片</button>
+    <button type="button" class="btn" id="imgClose">關閉</button>
+  </div>
 </dialog>
 
 <div class="toast" id="toast" role="status"></div>
@@ -717,7 +754,7 @@ function render() {
           + '<td class="it">' + hl(c.item, kw) + (tab === ALL && c.category ? '<span class="prod">' + esc(c.category) + '</span>' : '') + '</td>'
           + '<td class="bd">' + hl(c.body, kw) + '</td>'
           + '<td class="nt">' + linkify(c.note, kw) + '</td>'
-          + '<td class="im">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(c.item) + ' 附圖" loading="lazy">' : '') + '</td>'
+          + '<td class="im">' + (img ? '<button class="thumb" data-img="' + c.id + '" title="點一下看大圖" aria-label="看「' + esc(c.item) + '」的附圖大圖"><img src="' + esc(img) + '" alt="" loading="lazy"></button>' : '') + '</td>'
           + '<td class="ac"><button class="btn copy" data-copy="' + c.id + '" title="複製保文" aria-label="複製保文"><svg class="copy-ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" shape-rendering="crispEdges"><rect x="5.5" y="1.5" width="9" height="10" fill="#fff" stroke="#000"/><rect x="1.5" y="4.5" width="9" height="10" fill="#fff" stroke="#000"/><path d="M3 7.5h6M3 9.5h6M3 11.5h4" stroke="#000080"/></svg></button></td></tr>';
       });
     });
@@ -748,6 +785,8 @@ $('list').addEventListener('click', async e => {
     catch (err) { toast('複製失敗，請手動選取文字'); }
     return;
   }
+  const th = e.target.closest('[data-img]');
+  if (th) { e.stopPropagation(); const c = claims.find(x => x.id == th.dataset.img); openImg(c.image_path, c.item); return; }
   if (e.target.closest('a')) return;
   if (window.getSelection && String(window.getSelection()).length) return;   // 正在選字就不打開
   const tr = e.target.closest('tr.item'); if (tr) openEdit(claims.find(x => x.id == tr.dataset.id));
@@ -758,27 +797,54 @@ $('list').addEventListener('keydown', e => {
 });
 
 // ───────── 新增／修改 ─────────
-function fillLists() {
-  $('prodList').innerHTML = [...new Set([...PRODUCT_ORDER, ...products()])].map(p => '<option value="' + esc(p) + '">').join('');
-  const p = $('fProduct').value.trim();
-  const cats = [...new Set(claims.filter(c => !p || c.product === p).map(c => c.category).filter(Boolean))];
-  $('catList').innerHTML = cats.map(c => '<option value="' + esc(c) + '">').join('');
+const NEW = '__new__', NONE = '';
+const rankP = p => { const i = PRODUCT_ORDER.indexOf(p); return i < 0 ? 999 : i; };
+function opt(v, label, sel) { return '<option value="' + esc(v) + '"' + (sel ? ' selected' : '') + '>' + esc(label) + '</option>'; }
+// 商品下拉：既有商品＋固定清單，最後是「自己輸入」
+function fillProducts(value) {
+  const list = [...new Set([...PRODUCT_ORDER, ...products()])].sort((a, b) => rankP(a) - rankP(b) || a.localeCompare(b, 'zh-Hant'));
+  if (value && !list.includes(value)) list.push(value);
+  $('fProductSel').innerHTML = (value ? '' : opt('', '－請選擇－', true))
+    + list.map(p => opt(p, p, p === value)).join('') + opt(NEW, '＋ 其他（自己輸入）', false);
+  $('fProductNew').hidden = true; $('fProductNew').value = '';
 }
-$('fProduct').addEventListener('input', fillLists);
+// 分類下拉：只列這個商品已經有的分類
+function fillCategories(value) {
+  const p = currentProduct();
+  const list = [...new Set(claims.filter(c => c.product === p).map(c => c.category).filter(Boolean))];
+  if (value && !list.includes(value)) list.push(value);
+  $('fCategorySel').innerHTML = opt(NONE, '（不分類）', !value)
+    + list.map(c => opt(c, c, c === value)).join('') + opt(NEW, '＋ 新增分類…', false);
+  $('fCategoryNew').hidden = true; $('fCategoryNew').value = '';
+}
+const currentProduct = () => $('fProductSel').value === NEW ? $('fProductNew').value.trim() : $('fProductSel').value;
+const currentCategory = () => $('fCategorySel').value === NEW ? $('fCategoryNew').value.trim() : $('fCategorySel').value;
+$('fProductSel').addEventListener('change', () => {
+  const isNew = $('fProductSel').value === NEW;
+  $('fProductNew').hidden = !isNew;
+  if (isNew) $('fProductNew').focus();
+  fillCategories('');
+});
+$('fCategorySel').addEventListener('change', () => {
+  const isNew = $('fCategorySel').value === NEW;
+  $('fCategoryNew').hidden = !isNew;
+  if (isNew) $('fCategoryNew').focus();
+});
 
 function showImg() {
   let src = '';
   if (pendingFile) src = URL.createObjectURL(pendingFile);
   else if (editing && editing.image_path && !removeImg) src = imgUrls[editing.image_path] || '';
-  $('imgPreview').innerHTML = src ? '<img src="' + esc(src) + '" alt="附圖預覽">' : '<span class="none">（沒有附圖）</span>';
+  $('imgPreview').innerHTML = src ? '<button type="button" class="thumb big" id="previewThumb" title="點一下看大圖"><img src="' + esc(src) + '" alt="附圖預覽"></button>' : '<span class="none">（沒有附圖）</span>';
+  if (src) $('previewThumb').onclick = () => pendingFile ? openImg(null, $('fItem').value || '新圖片', src, pendingFile) : openImg(editing.image_path, editing.item);
   $('imgRemove').hidden = !src;
 }
 
 function openEdit(c) {
   editing = c || null; pendingFile = null; removeImg = false;
   $('editTitle').textContent = c ? '修改保文' : '新增保文';
-  $('fProduct').value = c ? c.product : (tab !== ALL ? tab : '');
-  $('fCategory').value = c ? (c.category || '') : '';
+  fillProducts(c ? c.product : (tab !== ALL ? tab : ''));
+  fillCategories(c ? (c.category || '') : '');
   $('fItem').value = c ? c.item : '';
   $('fBody').value = c ? (c.body || '') : '';
   $('fNote').value = c ? (c.note || '') : '';
@@ -789,9 +855,9 @@ function openEdit(c) {
   $('delBtn').hidden = !c; $('histBtn').hidden = !c;
   $('delBtn').classList.remove('armed'); $('delBtn').textContent = '刪除';
   $('saveBtn').disabled = false;
-  fillLists(); showImg();
+  showImg();
   $('editDlg').showModal();
-  setTimeout(() => (c ? $('fBody') : ($('fProduct').value ? $('fItem') : $('fProduct'))).focus(), 0);
+  setTimeout(() => (c ? $('fBody') : (currentProduct() ? $('fItem') : $('fProductSel'))).focus(), 0);
 }
 $('addBtn').addEventListener('click', () => openEdit(null));
 $('cancelBtn').addEventListener('click', () => $('editDlg').close());
@@ -806,8 +872,8 @@ $('imgRemove').addEventListener('click', () => { pendingFile = null; removeImg =
 $('editForm').addEventListener('submit', async e => {
   e.preventDefault();
   const rec = {
-    product: $('fProduct').value.trim(),
-    category: $('fCategory').value.trim() || null,
+    product: currentProduct(),
+    category: currentCategory() || null,
     item: $('fItem').value.trim(),
     body: $('fBody').value.trim() || null,
     note: $('fNote').value.trim() || null,
@@ -855,6 +921,37 @@ $('delBtn').addEventListener('click', async () => {
   $('editDlg').close();
   toast('已刪除「' + editing.item + '」（修改紀錄裡還查得到）');
   await load();
+});
+
+// ───────── 看大圖／下載 ─────────
+let viewing = null;   // {path, name, src, file}
+function openImg(path, name, src, file) {
+  viewing = { path, name, src: src || imgUrls[path], file };
+  $('imgTitle').textContent = '附圖：' + name;
+  $('imgBig').src = viewing.src; $('imgBig').alt = name + ' 附圖';
+  $('imgDlg').showModal();
+}
+$('imgClose').addEventListener('click', () => $('imgDlg').close());
+$('imgDlg').addEventListener('click', e => { if (e.target === $('imgDlg')) $('imgDlg').close(); });   // 點外面關閉
+$('imgOpen').addEventListener('click', () => window.open(viewing.src, '_blank', 'noopener'));
+$('imgDownload').addEventListener('click', async () => {
+  const b = $('imgDownload'); b.disabled = true;
+  try {
+    let blob = viewing.file;
+    if (!blob) {
+      const { data, error } = await sb.storage.from(BUCKET).download(viewing.path);
+      if (error) throw error;
+      blob = data;
+    }
+    const ext = (viewing.path || (viewing.file && viewing.file.name) || '.png').split('.').pop();
+    const safe = viewing.name.replace(/[\\/:*?"<>|]/g, '').slice(0, 60) || '附圖';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = safe + '.' + ext;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('已下載：' + a.download);
+  } catch (err) { toast('下載失敗：' + (err.message || err)); }
+  b.disabled = false;
 });
 
 // ───────── 匯出（Excel 可以直接開的 CSV）─────────
