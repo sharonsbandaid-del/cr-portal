@@ -678,11 +678,17 @@ $('customApply').addEventListener('click', () => {
   applyStatus(v);
   $('customInput').value = '';
 });
-$('customInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('customApply').click(); } });
+$('customInput').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;   // 中文輸入法選字時按的 Enter 不算
+  e.preventDefault(); $('customApply').click();
+});
 $('cancelBtn').addEventListener('click', () => $('editDlg').close());
 $('saveBtn').addEventListener('click', save);
 
 async function save() {
+  // 自己輸入的狀態沒按「套用」就直接儲存時，也照目前選的整天／上午／下午套用
+  const typed = $('customInput').value.trim();
+  if (typed) { applyStatus(typed); $('customInput').value = ''; }
   const { date, member, am, pm, orig } = editing;
   $('editDlg').close();
   if ((orig?.am || null) === am && (orig?.pm || null) === pm) return;
