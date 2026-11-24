@@ -526,6 +526,8 @@ let members = [];       // [{name, team}]
 const LOW_RATE = 0.7;
 // 這些狀態也算「有出勤」（沒填＝正常出勤，本來就算）
 const PRESENT_STATUSES = ['在宅', '颱風在宅'];
+// 不列入出勤率計算的人（名單照樣顯示）
+const EXCLUDE_FROM_RATE = ['KUAN', 'RISHONA', 'WEN'];
 let myName = '';
 let data = {};          // 'YYYY-MM-DD|NAME' → {am, pm, updated_by, updated_at}
 let editing = null;     // {date, member, am, pm, target}
@@ -618,7 +620,7 @@ function render() {
   }
 
   // 每個上班日的出勤率：半天算 0.5 人
-  const people = [...new Set(members.map(m => m.name))];
+  const people = [...new Set(members.map(m => m.name))].filter(n => !EXCLUDE_FROM_RATE.includes(String(n).toUpperCase()));
   const here = s => !s || PRESENT_STATUSES.includes(s);
   cols.forEach(c => {
     if (c.off || !people.length) return;
