@@ -370,6 +370,16 @@ dialog .win-title { margin-bottom: 10px; }
   .legend { display: none; }
   .grid-wrap { max-height: calc(100vh - 190px); }
 }
+
+/* 出勤率示警 */
+thead th.low { background: #ffd6d0; color: #a00000; box-shadow: var(--w-raised), inset 0 -3px 0 #d00000; }
+thead th.low small { color: #a00000; }
+thead th.low.today { background: linear-gradient(180deg, #a00000, #e04030); color: #fff; }
+thead th.low.today small, thead th.low.today .rate { color: #ffe3e0; }
+thead th .warn { display: block; font-size: 11px; line-height: 1; margin-bottom: 1px; }
+thead th .rate { display: block; font-style: normal; font-size: 10px; font-weight: 700; line-height: 1.2; }
+td.cell.low-col { background: #fff3f1; }
+.legend i.low-key { background: #ffd6d0; color: #a00000; font-style: normal; font-size: 10px; line-height: 12px; text-align: center; }
 </style>
 </head>
 <body>
@@ -411,6 +421,7 @@ dialog .win-title { margin-bottom: 10px; }
       <span><i style="background:var(--st-event)"></i>員旅／公假／婚假</span>
       <span><i style="background:#f1f1f1"></i>假日</span>
       <span><b class="half"></b>上下半天不同（上格＝上午）</span>
+      <span><i class="low-key">⚠</i>出勤率低於 60%</span>
     </div>
   </div>
 
@@ -500,6 +511,10 @@ function toast(msg) {
 const now = new Date();
 let viewY = now.getFullYear(), viewM = now.getMonth();
 let members = [];       // [{name, team}]
+// 出勤率示警：低於這個比例，日期會標紅色 ⚠
+const LOW_RATE = 0.6;
+// 這些狀態也算「有出勤」（沒填＝正常出勤，本來就算）
+const PRESENT_STATUSES = ['在宅', '颱風在宅'];
 let myName = '';
 let data = {};          // 'YYYY-MM-DD|NAME' → {am, pm, updated_by, updated_at}
 let editing = null;     // {date, member, am, pm, target}
@@ -591,11 +606,27 @@ function render() {
     cols.push({ key, d, wk, off: wk === 0 || wk === 6 || !!HOLIDAYS[key], today: key === today });
   }
 
+  // 每個上班日的出勤率：半天算 0.5 人
+  const people = [...new Set(members.map(m => m.name))];
+  const here = s => !s || PRESENT_STATUSES.includes(s);
+  cols.forEach(c => {
+    if (c.off || !people.length) return;
+    let n = 0;
+    people.forEach(name => {
+      const rec = data[c.key + '|' + name];
+      n += (here(rec?.am) ? 0.5 : 0) + (here(rec?.pm) ? 0.5 : 0);
+    });
+    c.present = n; c.rate = n / people.length; c.low = c.rate < LOW_RATE;
+  });
+
   let h = '<table><thead><tr><th class="name">成員</th>';
   cols.forEach(c => {
-    const cls = [c.off ? 'off' : '', c.today ? 'today' : ''].join(' ');
-    const title = HOLIDAYS[c.key] ? ' title="' + esc(HOLIDAYS[c.key]) + '"' : '';
-    h += '<th class="' + cls + '"' + title + '>' + c.d + '<small>' + WEEK[c.wk] + '</small></th>';
+    const cls = [c.off ? 'off' : '', c.today ? 'today' : '', c.low ? 'low' : ''].join(' ');
+    let tip = HOLIDAYS[c.key] || '';
+    if (c.rate !== undefined) tip = '出勤率 ' + Math.round(c.rate * 100) + '%（' + c.present + '／' + people.length + ' 人）' + (c.low ? '，低於 ' + Math.round(LOW_RATE * 100) + '%' : '');
+    const title = tip ? ' title="' + esc(tip) + '"' : '';
+    h += '<th class="' + cls + '"' + title + '>' + (c.low ? '<span class="warn" aria-hidden="true">⚠</span>' : '') + c.d + '<small>' + WEEK[c.wk] + '</small>'
+      + (c.low ? '<em class="rate">' + Math.round(c.rate * 100) + '%</em>' : '') + '</th>';
   });
   h += '</tr></thead><tbody>';
 
@@ -608,7 +639,7 @@ function render() {
     h += '<tr><td class="name' + (m.name === myName ? ' me' : '') + '"><b>' + esc(m.name) + '</b></td>';
     cols.forEach(c => {
       const rec = data[c.key + '|' + m.name];
-      const cls = ['cell', c.off ? 'off' : '', c.today ? 'today' : ''].join(' ');
+      const cls = ['cell', c.off ? 'off' : '', c.today ? 'today' : '', c.low ? 'low-col' : ''].join(' ');
       h += '<td class="' + cls + '"><button data-d="' + c.key + '" data-m="' + esc(m.name) + '"'
         + ' aria-label="' + esc(cellLabel(m.name, c.key, rec)) + '">' + cellInner(rec) + '</button></td>';
     });
