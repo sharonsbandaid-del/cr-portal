@@ -421,7 +421,7 @@ td.cell.low-col { background: #fff3f1; }
       <span><i style="background:var(--st-event)"></i>員旅／公假／婚假</span>
       <span><i style="background:#f1f1f1"></i>假日</span>
       <span><b class="half"></b>上下半天不同（上格＝上午）</span>
-      <span><i class="low-key">⚠</i>出勤率低於 60%</span>
+      <span><i class="low-key">⚠</i>出勤率低於 70%</span>
     </div>
   </div>
 
@@ -512,7 +512,7 @@ const now = new Date();
 let viewY = now.getFullYear(), viewM = now.getMonth();
 let members = [];       // [{name, team}]
 // 出勤率示警：低於這個比例，日期會標紅色 ⚠
-const LOW_RATE = 0.6;
+const LOW_RATE = 0.7;
 // 這些狀態也算「有出勤」（沒填＝正常出勤，本來就算）
 const PRESENT_STATUSES = ['在宅', '颱風在宅'];
 let myName = '';
